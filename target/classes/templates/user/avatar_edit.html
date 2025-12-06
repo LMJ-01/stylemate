@@ -1,0 +1,308 @@
+	<!DOCTYPE html>
+	<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+	<head>
+	  <meta charset="UTF-8" />
+	  <meta name="viewport" content="width=device-width, initial-scale=1" />
+	
+	  <!-- CSRF (null-safe) -->
+	  <meta name="_csrf" th:if="${_csrf}" th:content="${_csrf.token}"/>
+	  <meta name="_csrf_header" th:if="${_csrf}" th:content="${_csrf.headerName}"/>
+	
+	  <script src="https://cdn.tailwindcss.com"></script>
+	  <title>아바타 편집</title>
+	  <style>
+	    .avatar-canvas { aspect-ratio: 3/5; width: 100%; max-width: 360px; }
+	    .smooth { transition: all .2s ease; }
+	  </style>
+	</head>
+	<body class="bg-gray-50 min-h-screen">
+	<header class="bg-white border-b">
+	  <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+	    <h1 class="text-xl md:text-2xl font-bold">🧍 아바타 편집</h1>
+	    <div class="space-x-3 text-sm">
+	      <a th:href="@{/}" class="text-gray-600 hover:text-black">홈</a>
+	      <a th:href="@{'/user/profile/' + ${user.id}}" class="text-gray-600 hover:text-black">내 프로필</a>
+	      <a th:href="@{'/user/profile/' + ${user.id} + '/fittingroom'}" class="text-gray-600 hover:text-black">피팅룸</a>
+	    </div>
+	  </div>
+	</header>
+	
+	<main class="max-w-5xl mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+	  <!-- 미리보기 -->
+	  <section class="bg-white rounded-xl shadow p-4">
+	    <h2 class="font-semibold mb-3">미리보기</h2>
+	    <div class="flex justify-center">
+	      <svg id="avatar-svg" class="avatar-canvas" viewBox="0 0 300 500" role="img" aria-label="아바타 미리보기">
+	        <rect x="0" y="0" width="300" height="500" fill="#f7f7f7" rx="20"></rect>
+	
+	        <!-- 몸 -->
+	        <g id="body-group" class="smooth" transform="translate(150,260)">
+	          <ellipse id="torso" class="smooth" cx="0" cy="0" rx="60" ry="95" fill="#e6cbb3"></ellipse>
+	          <rect id="shoulders" class="smooth" x="-75" y="-90" width="150" height="30" rx="15" fill="#e6cbb3"></rect>
+	          <ellipse id="armL" class="smooth" cx="-90" cy="-40" rx="22" ry="60" fill="#e6cbb3"></ellipse>
+	          <ellipse id="armR" class="smooth" cx="90"  cy="-40" rx="22" ry="60" fill="#e6cbb3"></ellipse>
+	          <ellipse id="legL" class="smooth" cx="-25" cy="120" rx="28" ry="95" fill="#e6cbb3"></ellipse>
+	          <ellipse id="legR" class="smooth" cx=" 25" cy="120" rx="28" ry="95" fill="#e6cbb3"></ellipse>
+	        </g>
+	
+	        <!-- 머리 -->
+	        <g id="head-group" class="smooth" transform="translate(150,110)">
+	          <circle id="head" class="smooth" cx="0" cy="0" r="45" fill="#e6cbb3"></circle>
+	        </g>
+	
+	        <!-- 발 -->
+	        <g id="feet-group" class="smooth" transform="translate(150,470)">
+	          <ellipse cx="-30" cy="0" rx="28" ry="12" fill="#cfcfcf"></ellipse>
+	          <ellipse cx=" 30" cy="0" rx="28" ry="12" fill="#cfcfcf"></ellipse>
+	        </g>
+	      </svg>
+	    </div>
+	    <p class="text-xs text-gray-500 mt-2">
+	      * 실제 의류 레이어는 피팅룸에서 겹쳐서 표시됩니다. 여기서는 체형/피부색/비율만 미리보기로 조절합니다.
+	    </p>
+	  </section>
+	
+	  <!-- 폼 -->
+	  <section class="bg-white rounded-xl shadow p-4">
+	    <h2 class="font-semibold mb-3">아바타 속성</h2>
+	    <form th:action="@{'/user/profile/' + ${user.id} + '/avatar/save'}"
+	          method="post"
+	          class="space-y-4"
+	          id="avatar-form">
+	      <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}"/>
+	
+	      <!-- 키/몸무게 -->
+	      <div class="grid grid-cols-2 gap-3">
+	        <div>
+	          <label class="text-sm text-gray-600">키 (cm)</label>
+	          <input id="heightCm" name="heightCm" type="number" min="120" max="220" step="1"
+	                 th:value="${avatar?.heightCm ?: 175}"
+	                 class="mt-1 w-full border rounded-lg px-3 py-2" />
+	          <!-- heightScale 은 서버에서 읽지 말고 JS가 계산해서 사용 -->
+	          <input id="heightScale" name="heightScale" type="range" min="0.85" max="1.15" step="0.01"
+	                 class="mt-2 w-full" />
+	        </div>
+	        <div>
+	          <label class="text-sm text-gray-600">몸무게 (kg)</label>
+	          <input id="weightKg" name="weightKg" type="number" min="40" max="160" step="1"
+	                 th:value="${avatar?.weightKg ?: 70}"
+	                 class="mt-1 w-full border rounded-lg px-3 py-2" />
+	          <input id="weightScale" name="weightScale" type="range" min="0.85" max="1.30" step="0.01"
+	                 class="mt-2 w-full" />
+	        </div>
+	      </div>
+	
+	      <!-- 체형/어깨/머리 -->
+	      <div class="grid grid-cols-3 gap-3">
+	        <div>
+	          <label class="text-sm text-gray-600">체형</label>
+	          <select id="bodyShape" name="bodyShape" class="mt-1 w-full border rounded-lg px-3 py-2">
+	            <option th:selected="${avatar?.bodyShape=='slim'}"    value="slim">슬림</option>
+	            <option th:selected="${avatar?.bodyShape=='regular' or avatar?.bodyShape == null}" value="regular">보통</option>
+	            <option th:selected="${avatar?.bodyShape=='plus'}"    value="plus">볼륨(플러스)</option>
+	          </select>
+	        </div>
+	        <div>
+	          <label class="text-sm text-gray-600">어깨 너비</label>
+	          <input id="shoulderScale" name="shoulderScale" type="range" min="0.9" max="1.3" step="0.01"
+	                 th:value="${avatar?.shoulderScale ?: 1.0}"
+	                 class="mt-2 w-full" />
+	        </div>
+	        <div>
+	          <label class="text-sm text-gray-600">머리 크기</label>
+	          <input id="headScale" name="headScale" type="range" min="0.85" max="1.2" step="0.01"
+	                 th:value="${avatar?.headScale ?: 1.0}"
+	                 class="mt-2 w-full" />
+	        </div>
+	      </div>
+	
+	      <!-- 피부색 -->
+	      <div class="grid grid-cols-2 gap-3">
+	        <div>
+	          <label class="text-sm text-gray-600">피부색</label>
+	          <input id="skinTone" name="skinTone" type="color"
+	                 th:value="${avatar?.skinTone ?: '#e6cbb3'}"
+	                 class="mt-1 w-full h-10 border rounded-lg p-0" />
+	        </div>
+	        <div>
+	          <label class="text-sm text-gray-600">톤 밝기</label>
+	          <input id="toneBrightness" name="toneBrightness" type="range" min="0.85" max="1.15" step="0.01"
+	                 th:value="${avatar?.toneBrightness ?: 1.0}"
+	                 class="mt-2 w-full" />
+	        </div>
+	      </div>
+	
+	      <!-- 성별/포즈 -->
+	      <div class="grid grid-cols-2 gap-3">
+	        <div>
+	          <label class="text-sm text-gray-600">성별</label>
+	          <select id="gender" name="gender" class="mt-1 w-full border rounded-lg px-3 py-2">
+	            <option th:selected="${avatar?.gender=='unisex' or avatar?.gender == null}" value="unisex">공용</option>
+	            <option th:selected="${avatar?.gender=='male'}"   value="male">남성</option>
+	            <option th:selected="${avatar?.gender=='female'}" value="female">여성</option>
+	          </select>
+	        </div>
+	        <div>
+	          <label class="text-sm text-gray-600">기본자세</label>
+	          <select id="pose" name="pose" class="mt-1 w-full border rounded-lg px-3 py-2">
+	            <option th:selected="${avatar?.pose=='neutral' or avatar?.pose == null}" value="neutral">정면(기본)</option>
+	            <option th:selected="${avatar?.pose=='slight'}"  value="slight">살짝 측면</option>
+	          </select>
+	        </div>
+	      </div>
+	
+	      <div class="flex items-center justify-between pt-2">
+	        <button type="button" id="btn-reset"
+	                class="px-3 py-2 rounded-lg bg-gray-200 hover:bg-gray-300">초기값</button>
+	        <div class="space-x-2">
+	          <a th:href="@{'/user/profile/' + ${user.id} + '/fittingroom'}"
+	             class="px-4 py-2 rounded-lg bg-white border hover:bg-gray-50">취소</a>
+	          <button class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">저장</button>
+	        </div>
+	      </div>
+	    </form>
+	  </section>
+	</main>
+	
+	<footer class="py-8 text-center text-xs text-gray-500">
+	  StyleMate • Avatar Editor
+	</footer>
+	
+	<script>
+	(function () {
+	  const $ = (s,p=document)=>p.querySelector(s);
+	
+	  // SVG 파츠
+	  const head  = $('#head');
+	  const torso = $('#torso');
+	  const shoulders = $('#shoulders');
+	  const bodyGroup = $('#body-group');
+	  const headGroup = $('#head-group');
+	  const armL = $('#armL'), armR = $('#armR');
+	  const legL = $('#legL'), legR = $('#legR');
+	
+	  // 입력들
+	  const heightCm = $('#heightCm');
+	  const heightScale = $('#heightScale');
+	  const weightKg = $('#weightKg');
+	  const weightScale = $('#weightScale');
+	  const bodyShape = $('#bodyShape');
+	  const shoulderScale = $('#shoulderScale');
+	  const headScale = $('#headScale');
+	  const skinTone = $('#skinTone');
+	  const toneBrightness = $('#toneBrightness');
+	  const gender = $('#gender');
+	  const pose = $('#pose');
+	  const resetBtn = $('#btn-reset');
+	
+	  const liveHeight = $('#liveHeight');
+	  const liveWeight = $('#liveWeight');
+	
+	  // 슬라이더 초기값: heightCm / weightKg 기준
+	  if (!heightScale.value || Number.isNaN(parseFloat(heightScale.value))) {
+	    heightScale.value = clamp(map(+heightCm.value||175, 150, 190, 0.9, 1.1), 0.85, 1.15);
+	  }
+	  if (!weightScale.value || Number.isNaN(parseFloat(weightScale.value))) {
+	    weightScale.value = clamp(map(+weightKg.value||70, 50, 95, 0.92, 1.18), 0.85, 1.30);
+	  }
+	
+	  heightCm.addEventListener('input', () => {
+	    heightScale.value = clamp(map(+heightCm.value||175,150,190,0.9,1.1),0.85,1.15);
+	    redraw();
+	  });
+	  weightKg.addEventListener('input', () => {
+	    weightScale.value = clamp(map(+weightKg.value||70,50,95,0.92,1.18),0.85,1.30);
+	    redraw();
+	  });
+	
+	  heightScale.addEventListener('input', () => {
+	    const h = Math.round((+heightScale.value||1) * 170);
+	    heightCm.value = h;
+	    redraw();
+	  });
+	  weightScale.addEventListener('input', () => {
+	    const w = Math.round((+weightScale.value||1) * 70);
+	    weightKg.value = w;
+	    redraw();
+	  });
+	
+	  [bodyShape, shoulderScale, headScale, skinTone, toneBrightness, gender, pose]
+	    .forEach(el => el && el.addEventListener('input', redraw));
+	
+	  resetBtn?.addEventListener('click', () => {
+	    heightCm.value = 175; heightScale.value = 1.0;
+	    weightKg.value = 70;  weightScale.value = 1.0;
+	    bodyShape.value = 'regular';
+	    shoulderScale.value = 1.0;
+	    headScale.value = 1.0;
+	    skinTone.value = '#e6cbb3';
+	    toneBrightness.value = 1.0;
+	    gender.value = 'unisex';
+	    pose.value = 'neutral';
+	    redraw();
+	  });
+	
+	  function redraw() {
+	    if (liveHeight) liveHeight.textContent = heightCm.value || '—';
+	    if (liveWeight) liveWeight.textContent = weightKg.value || '—';
+	
+	    const hS = parseFloat(heightScale.value || 1);
+	    const wS = parseFloat(weightScale.value || 1);
+	
+	    let torsoRx = 60, torsoRy = 95, legRx = 28, legRy = 95, armRx = 22, armRy = 60;
+	    let shoulderW = 150;
+	    switch (bodyShape.value) {
+	      case 'slim':    torsoRx=54; legRx=24; armRx=19; shoulderW=140; break;
+	      case 'regular': torsoRx=60; legRx=28; armRx=22; shoulderW=150; break;
+	      case 'plus':    torsoRx=70; legRx=33; armRx=25; shoulderW=165; break;
+	    }
+	
+	    const shS = parseFloat(shoulderScale.value || 1);
+	    const hdS = parseFloat(headScale.value || 1);
+	
+	    const base = hexToRgb(skinTone.value || '#e6cbb3');
+	    const bright = parseFloat(toneBrightness.value || 1);
+	    const skin = toHex({
+	      r: clamp(Math.round(base.r * bright), 0, 255),
+	      g: clamp(Math.round(base.g * bright), 0, 255),
+	      b: clamp(Math.round(base.b * bright), 0, 255)
+	    });
+	
+	    [head, torso, shoulders, armL, armR, legL, legR]
+	      .forEach(el => el && el.setAttribute('fill', skin));
+	
+	    head.setAttribute('r', String(45 * hdS));
+	
+	    torso.setAttribute('rx', String(torsoRx * wS));
+	    torso.setAttribute('ry', String(torsoRy * hS));
+	
+	    shoulders.setAttribute('x', String(-(shoulderW * shS)/2));
+	    shoulders.setAttribute('width', String(shoulderW * shS));
+	
+	    armL.setAttribute('rx', String(armRx * wS));
+	    armR.setAttribute('rx', String(armRx * wS));
+	    legL.setAttribute('rx', String(legRx * wS));
+	    legR.setAttribute('rx', String(legRx * wS));
+	
+	    const angle = (pose.value === 'slight') ? -5 : 0;
+	    bodyGroup.setAttribute('transform', `translate(150,260) rotate(${angle})`);
+	    headGroup.setAttribute('transform', `translate(150,110) rotate(${angle})`);
+	  }
+	
+	  function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+	  function map(x, inMin, inMax, outMin, outMax){
+	    const t = (x - inMin) / (inMax - inMin);
+	    return outMin + (clamp(t,0,1) * (outMax - outMin));
+	  }
+	  function hexToRgb(hex){
+	    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '#e6cbb3');
+	    return m ? { r: parseInt(m[1],16), g: parseInt(m[2],16), b: parseInt(m[3],16) } : {r:230,g:203,b:179};
+	  }
+	  function toHex({r,g,b}){ return '#' + [r,g,b].map(v=>v.toString(16).padStart(2,'0')).join(''); }
+	
+	  redraw();
+	})();
+	</script>
+	
+	</body>
+	</html>

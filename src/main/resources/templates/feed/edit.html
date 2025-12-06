@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>피드 수정</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const voteToggle = document.getElementById("vote");
+            const voteBox = document.getElementById("vote-box");
+
+            function toggleVoteBox() {
+                voteBox.classList.toggle("hidden", !voteToggle.checked);
+            }
+            if (voteToggle) {
+                voteToggle.addEventListener("change", toggleVoteBox);
+                toggleVoteBox();
+            }
+        });
+    </script>
+</head>
+<body class="bg-gray-100 p-8 min-h-screen">
+<div class="max-w-xl mx-auto bg-white p-6 rounded shadow space-y-6">
+    <h1 class="text-2xl font-bold text-gray-800">📝 피드 수정</h1>
+
+    <!-- ✅ 피드 수정 폼 -->
+    <form th:action="@{'/feed/edit/' + ${feed.id}}" method="post" enctype="multipart/form-data" class="space-y-5">
+        <!-- 내용 -->
+        <div>
+            <label for="content" class="block text-sm font-semibold text-gray-600 mb-1">내용</label>
+            <textarea id="content" name="content" rows="5"
+                      th:text="${feed.content}"
+                      class="w-full border rounded p-2 text-sm resize-y"></textarea>
+        </div>
+
+        <!-- 해시태그 -->
+        <div>
+            <label for="tags" class="block text-sm font-semibold text-gray-600 mb-1">해시태그 (쉼표로 구분)</label>
+            <input type="text" id="tags" name="tags"
+                   th:value="${#strings.arrayJoin(feed.tagList, ', ')}"
+                   class="w-full border rounded p-2 text-sm"/>
+        </div>
+
+        <!-- 현재 이미지 A -->
+        <div>
+            <label class="block text-sm font-semibold text-gray-600 mb-1">현재 이미지 A</label>
+            <div th:if="${feed.imageUrl != null}">
+                <img th:src="@{${feed.imageUrl}}" alt="이미지 A"
+                     class="w-full max-h-64 object-contain rounded border mb-2"/>
+            </div>
+            <div th:if="${feed.imageUrl == null}" class="text-sm text-gray-400">등록된 이미지가 없습니다.</div>
+        </div>
+
+        <!-- 이미지 A 교체 -->
+        <div>
+            <label for="imageFile" class="block text-sm font-semibold text-gray-600 mb-1">새 이미지 A 선택 (선택)</label>
+            <input type="file" id="imageFile" name="imageFile" accept="image/*"
+                   class="w-full border rounded p-2 text-sm bg-white"/>
+            <p class="text-xs text-gray-500 mt-1">새 이미지를 선택하면 기존 A 이미지가 교체됩니다.</p>
+        </div>
+
+        <!-- 🔀 투표 기능 사용 여부 -->
+        <div class="flex items-center gap-2">
+            <input id="vote" type="checkbox" name="vote" class="h-4 w-4" th:checked="${feed.vote}">
+            <label for="vote" class="text-sm font-medium text-gray-700">이 피드에 A/B 투표 기능 사용</label>
+        </div>
+
+        <!-- 투표 옵션 박스 -->
+        <div id="vote-box" class="border rounded-xl p-4 bg-gray-50 space-y-4 hidden">
+            <!-- 현재 이미지 B -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">현재 이미지 B</label>
+                <div th:if="${feed.imageUrlB != null}">
+                    <img th:src="@{${feed.imageUrlB}}" alt="이미지 B"
+                         class="w-full max-h-64 object-contain rounded border mb-2"/>
+                </div>
+                <div th:if="${feed.imageUrlB == null}" class="text-sm text-gray-400">등록된 B 이미지가 없습니다.</div>
+            </div>
+
+            <!-- 이미지 B 교체 -->
+            <div>
+                <label for="imageFileB" class="block text-sm font-semibold text-gray-600 mb-1">새 이미지 B 선택 (선택)</label>
+                <input type="file" id="imageFileB" name="imageFileB" accept="image/*"
+                       class="w-full border rounded p-2 text-sm bg-white"/>
+                <p class="text-xs text-gray-500 mt-1">선택 시 기존 B 이미지가 교체됩니다.</p>
+            </div>
+
+            <!-- 투표 시간 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">투표 시작 시간</label>
+                    <input id="voteStartAt" name="voteStartAt" type="datetime-local"
+                           th:value="${feed.voteStartAt != null ? #temporals.format(feed.voteStartAt, 'yyyy-MM-dd''T''HH:mm') : ''}"
+                           class="w-full border rounded p-2 text-sm bg-white"/>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">투표 종료 시간</label>
+                    <input id="voteEndAt" name="voteEndAt" type="datetime-local"
+                           th:value="${feed.voteEndAt != null ? #temporals.format(feed.voteEndAt, 'yyyy-MM-dd''T''HH:mm') : ''}"
+                           class="w-full border rounded p-2 text-sm bg-white"/>
+                </div>
+            </div>
+
+            <!-- 결과 공개 정책 -->
+            <div class="flex items-center gap-2">
+                <input id="revealAfterEnd" type="checkbox" name="revealAfterEnd" class="h-4 w-4"
+                       th:checked="${feed.revealAfterEnd}">
+                <label for="revealAfterEnd" class="text-sm text-gray-700">
+                    투표 종료 후 결과 공개 (해제 시 진행 중에도 실시간 공개)
+                </label>
+            </div>
+
+            <!-- 현재 투표 상태 안내 (읽기전용 표시) -->
+            <div class="text-xs text-gray-500">
+                현재 상태: <span th:text="${feed.voteState}">-</span>
+            </div>
+        </div>
+
+        <!-- 저장 -->
+        <div class="flex justify-end">
+            <button type="submit"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium">
+                ✅ 수정 완료
+            </button>
+        </div>
+    </form>
+
+    <!-- 삭제 -->
+    <form th:action="@{'/feed/delete/' + ${feed.id}}" method="post" class="text-right">
+        <button type="submit"
+                class="text-red-600 hover:text-red-800 text-sm font-semibold"
+                onclick="return confirm('정말 삭제하시겠습니까?')">
+            🗑️ 삭제
+        </button>
+    </form>
+
+    <!-- 돌아가기 -->
+    <div class="text-right">
+        <a href="/feed/list" class="text-gray-500 hover:text-gray-800 text-sm underline">← 피드 목록으로</a>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <!-- CSRF 메타 (스프링 시큐리티 사용 시) -->
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+  <!-- 최신 vote.js (캐시 무력화용 v 파라미터 권장) -->
+  <script th:src="@{/js/vote.js(v=${T(java.lang.System).currentTimeMillis()})}" defer></script>
+</head>
+<body>
+<!-- 사용: <div th:replace="~{fragments/vote :: voteBox(feed=${feed})}"></div> -->
+<div th:fragment="voteBox(feed)"
+     class="vote-box border rounded-xl p-4 bg-gray-50 space-y-3"
+     th:data-feed-id="${feed.id}"
+     th:data-start-iso="${feed.voteStartAt != null ? #temporals.format(feed.voteStartAt, 'yyyy-MM-dd''T''HH:mm:ss') : ''}"
+     th:data-end-iso="${feed.voteEndAt   != null ? #temporals.format(feed.voteEndAt,   'yyyy-MM-dd''T''HH:mm:ss') : ''}"
+     th:data-reveal="${feed.revealAfterEnd}">
+
+  <!-- 상태/카운트다운/총표 -->
+  <div class="flex items-center justify-between text-xs text-gray-700">
+    <span th:id="'state-' + ${feed.id}" data-part="state">상태: -</span>
+    <span th:id="'countdown-' + ${feed.id}" data-part="countdown"></span>
+    <!-- ❗ 초기 총표는 마스킹 -->
+    <span th:id="'total-' + ${feed.id}" data-part="total">총 ??표</span>
+  </div>
+
+  <!-- A/B 카드 -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- A -->
+    <div th:id="'cardA-' + ${feed.id}"
+         data-part="cardA"
+         class="vote-card bg-white rounded-lg shadow-sm p-3 transition"
+         th:classappend="${feed.myChoice != null and feed.myChoice == 1} ? ' ring-2 ring-blue-500 bg-blue-50' : ''">
+      <div class="aspect-[4/5] w-full overflow-hidden rounded-md bg-gray-100">
+        <img th:src="${feed.imageUrl}" alt="A" class="w-full h-full object-contain"/>
+      </div>
+      <div class="mt-2 flex items-center justify-between">
+        <div class="text-sm font-medium">A 선택</div>
+        <button type="button"
+                th:id="|vote-opt-${feed.id}-1|"
+                data-part="btnA"
+                class="vote-btn bg-gray-50 hover:bg-gray-100 rounded-md px-3 py-1 text-sm transition focus:outline-none"
+                th:attr="data-feed-id=${feed.id},data-option=1,data-vote-option=${feed.id}"
+                th:onclick="|submitVote(${feed.id}, 1)|">
+          투표
+        </button>
+      </div>
+      <div class="mt-2">
+        <div class="h-2 bg-gray-200 rounded">
+          <div th:id="|vote-bar-${feed.id}-1|" data-part="barA" class="h-2 rounded bg-blue-500" style="width:0%"></div>
+        </div>
+        <div class="text-xs text-gray-500 mt-1">
+          <!-- ❗ 초기 숫자 마스킹 -->
+          <span th:id="|vote-count-${feed.id}-1|" data-part="countA">??</span>표
+        </div>
+      </div>
+    </div>
+
+    <!-- B -->
+    <div th:if="${feed.imageUrlB != null}"
+         th:id="'cardB-' + ${feed.id}"
+         data-part="cardB"
+         class="vote-card bg-white rounded-lg shadow-sm p-3 transition"
+         th:classappend="${feed.myChoice != null and feed.myChoice == 2} ? ' ring-2 ring-blue-500 bg-blue-50' : ''">
+      <div class="aspect-[4/5] w-full overflow-hidden rounded-md bg-gray-100">
+        <img th:src="${feed.imageUrlB}" alt="B" class="w-full h-full object-contain"/>
+      </div>
+      <div class="mt-2 flex items-center justify-between">
+        <div class="text-sm font-medium">B 선택</div>
+        <button type="button"
+                th:id="|vote-opt-${feed.id}-2|"
+                data-part="btnB"
+                class="vote-btn bg-gray-50 hover:bg-gray-100 rounded-md px-3 py-1 text-sm transition focus:outline-none"
+                th:attr="data-feed-id=${feed.id},data-option=2,data-vote-option=${feed.id}"
+                th:onclick="|submitVote(${feed.id}, 2)|">
+          투표
+        </button>
+      </div>
+      <div class="mt-2">
+        <div class="h-2 bg-gray-200 rounded">
+          <div th:id="|vote-bar-${feed.id}-2|" data-part="barB" class="h-2 rounded bg-blue-500" style="width:0%"></div>
+        </div>
+        <div class="text-xs text-gray-500 mt-1">
+          <!-- ❗ 초기 숫자 마스킹 -->
+          <span th:id="|vote-count-${feed.id}-2|" data-part="countB">??</span>표
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-[11px] text-gray-500 mt-2">투표 후, 선택한 카드가 파란 테두리로 강조됩니다.</div>
+</div>
+</body>
+</html>

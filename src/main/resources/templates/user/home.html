@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>홈 | StyleMate</title>
+
+  <!-- ✅ CSRF 메타 -->
+  <meta name="_csrf" th:content="${_csrf?.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf?.headerName}"/>
+
+  <!-- ✅ Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-50 min-h-screen p-6">
+<div class="max-w-4xl mx-auto">
+  <!-- ✅ 네비게이션 -->
+  <nav class="mb-8 flex justify-between items-center">
+    <div class="text-2xl font-bold text-gray-800">StyleMate</div>
+
+    <div class="space-x-4 text-sm">
+      <a href="/" class="text-gray-600 hover:text-black">🏠 홈</a>
+      <a href="/feed/list" class="text-gray-600 hover:text-black">📰 전체 피드</a>
+      <a th:href="@{/user/profile/{id}(id=${loginUserId})}" class="text-gray-600 hover:text-black">👤 내 프로필</a>
+
+      <!-- ✅ 로그아웃 -->
+      <form th:action="@{/logout}" method="post" class="inline">
+        <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}"/>
+        <button type="submit" class="text-gray-600 hover:text-black">🚪 로그아웃</button>
+      </form>
+    </div>
+  </nav>
+
+  <!-- ✅ 환영 문구 -->
+  <h1 class="text-3xl font-bold mb-6 text-gray-800"
+      th:text="${displayName != null && displayName != ''} ?
+               '환영합니다, ' + displayName + ' 님!' :
+               '환영합니다! 게스트 모드입니다.'">
+    환영합니다!
+  </h1>
+
+  <!-- ✅ 피드 섹션 -->
+  <section class="bg-white p-6 rounded-xl shadow-md">
+    <h2 class="text-2xl font-bold mb-4 text-gray-800">🔥 최신 피드</h2>
+
+    <!-- 피드가 없을 때 -->
+    <div th:if="${#lists.isEmpty(feeds)}" class="text-gray-500 py-8 text-center">
+      아직 등록된 피드가 없습니다. <a href="/feed/new" class="underline">첫 피드를 작성해보세요</a>.
+    </div>
+
+    <!-- ✅ 피드 목록 -->
+    <div th:each="feed : ${feeds}" class="mb-6 border-b pb-4">
+
+      <!-- 작성자 / 작성일 -->
+      <div class="flex justify-between items-center mb-2 text-sm">
+        <a th:if="${feed.user != null}"
+           th:href="@{/user/profile/{id}(id=${feed.user.id})}"
+           th:text="${feed.user.nickname}"
+           class="font-semibold text-blue-600 hover:underline">닉네임</a>
+
+        <span th:if="${feed.user == null}" class="text-gray-500">알 수 없음</span>
+        <span class="text-gray-400" th:text="${feed.formattedDate != null ? feed.formattedDate : ''}">작성일</span>
+      </div>
+
+      <!-- ✅ 투표 피드 -->
+      <div th:if="${feed.vote}" class="mb-3">
+        <div th:replace="~{fragments/vote :: voteBox(feed=${feed})}"></div>
+      </div>
+
+      <!-- ✅ 일반 피드 (이미지) -->
+      <div th:if="${!feed.vote and feed.imageUrl != null}" class="mb-3">
+        <img th:src="${feed.imageUrl}" alt="피드 이미지"
+             class="rounded-lg w-full max-h-72 object-contain shadow-sm"
+             loading="lazy" decoding="async" />
+      </div>
+
+      <!-- ✅ 피드 내용 -->
+      <p class="text-gray-800 text-sm mb-2"
+         th:text="${feed.content != null ? feed.content : ''}">내용</p>
+
+      <!-- ✅ 태그 -->
+      <div th:if="${feed.tagList != null and !#lists.isEmpty(feed.tagList)}" class="mb-2">
+        <span th:each="tag : ${feed.tagList}"
+              th:text="${tag}"
+              class="text-blue-500 text-xs mr-2">#태그</span>
+      </div>
+
+      <!-- ✅ 좋아요 / 댓글 -->
+      <div class="text-sm text-gray-600 space-x-4">
+        <button th:attr="id=|like-btn-${feed.id}|" 
+                th:onclick="|likeFeed(${feed.id})|"
+                class="hover:text-pink-600">❤️</button>
+        <span th:attr="id=|like-count-${feed.id}|" 
+              th:text="${feed.likeCount != null ? feed.likeCount : 0}">0</span>
+        <span class="text-gray-400 select-none">💬</span>
+        <span th:attr="id=|comment-count-${feed.id}|" 
+              th:text="${feed.commentCount != null ? feed.commentCount : 0}">0</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ✅ JS 파일 불러오기 (여기가 핵심) -->
+<script th:src="@{/js/vote.js}" defer></script>
+</body>
+</html>

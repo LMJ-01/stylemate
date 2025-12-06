@@ -1,0 +1,85 @@
+<!-- modalContent fragment -->
+<div th:fragment="modalContent">
+  <div class="flex flex-col lg:flex-row gap-4">
+    <!-- 피드 이미지 -->
+    <div class="lg:w-1/2 w-full">
+      <img th:src="${feed.imageUrl}" alt="피드 이미지" class="rounded-lg w-full object-contain shadow">
+    </div>
+
+    <!-- 피드 내용 -->
+    <div class="lg:w-1/2 w-full space-y-4">
+      <div class="flex justify-between items-center text-sm text-gray-600">
+        <span th:text="${feed.user.nickname}">작성자</span>
+        <span th:text="${#temporals.format(feed.createdAt, 'yyyy-MM-dd HH:mm')}">작성일</span>
+      </div>
+
+      <p class="text-gray-800 text-base" th:text="${feed.content}">내용</p>
+
+      <div>
+        <span th:each="tag : ${feed.tagList}" th:text="${tag}" class="text-blue-500 text-xs mr-2">#태그</span>
+      </div>
+
+      <!-- 좋아요 -->
+      <div class="text-sm text-pink-600">
+        <button type="button" th:id="|like-btn-${feed.id}|" th:onclick="|likeFeed(${feed.id})|">
+          ❤️ <span th:id="|like-count-${feed.id}|" th:text="${feed.likeCount}">0</span> 좋아요
+        </button>
+      </div>
+
+      <!-- 댓글 영역 -->
+      <div class="bg-gray-100 rounded p-3 max-h-[300px] overflow-y-auto" id="comment-container">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-semibold text-sm">💬 댓글</h3>
+          <span class="text-xs text-gray-500"
+                th:id="|comment-count-${feed.id}|"
+                th:text="${feed.commentCount}">0</span>
+        </div>
+
+        <!-- ✅ comment-list-{feed.id} 로 변경 -->
+        <div th:id="|comment-list-${feed.id}|">
+          <div th:each="comment : ${feed.comments}"
+               th:id="|comment-${comment.id}|"
+               class="text-sm text-gray-800 border-b py-2 relative group"
+               th:attr="data-user-id=${comment.user.id}">
+            <strong th:text="${comment.user.nickname}">닉네임</strong>:
+            <span th:id="|content-${comment.id}|" th:text="${comment.content}">댓글내용</span>
+            <div class="text-xs text-gray-500 mt-1"
+                 th:text="${#temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm:ss')}">
+              2025-01-01 12:00:00
+            </div>
+
+            <div class="absolute top-0 right-0 hidden group-hover:flex space-x-1"
+                 th:if="${loginUserId != null and comment.user != null and loginUserId == comment.user.id}">
+              <button type="button"
+                      class="edit-btn text-blue-500 text-xs hover:underline"
+                      th:attr="data-comment-id=${comment.id}">
+                수정
+              </button>
+              <button type="button"
+                      class="delete-btn text-red-500 text-xs hover:underline"
+                      th:attr="data-feed-id=${feed.id},data-comment-id=${comment.id}">
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 댓글 입력 -->
+      <div class="mt-4 flex space-x-2">
+        <input type="text"
+               th:id="|comment-input-${feed.id}|"
+               class="flex-1 border rounded px-3 py-2 text-sm"
+               placeholder="댓글을 입력하세요"
+               required>
+
+        <!-- ✅ onclick 동일하게 -->
+        <button type="button"
+                th:onclick="|submitComment(${feed.id})|"
+                class="bg-gray-800 text-white px-4 py-2 rounded text-sm hover:bg-black">
+          작성
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

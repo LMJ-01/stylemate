@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>피드 작성</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- ✅ CSRF 메타 (null-safe) -->
+  <meta name="_csrf" th:content="${_csrf?.token}">
+  <meta name="_csrf_header" th:content="${_csrf?.headerName}">
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const voteToggle = document.getElementById("vote");
+      const voteBox = document.getElementById("vote-box");
+      const startInput = document.getElementById("voteStartAtStr");
+      const endInput = document.getElementById("voteEndAtStr");
+
+      function toggleVoteBox() {
+        voteBox.classList.toggle("hidden", !voteToggle.checked);
+      }
+
+      voteToggle.addEventListener("change", toggleVoteBox);
+
+      document.getElementById("feedForm").addEventListener("submit", (e) => {
+        if (voteToggle.checked) {
+          const start = new Date(startInput.value);
+          const end = new Date(endInput.value);
+          if (!startInput.value || !endInput.value || start >= end) {
+            e.preventDefault();
+            alert("투표 종료 시간은 시작 시간 이후여야 합니다!");
+          }
+        }
+      });
+
+      toggleVoteBox(); // 초기 숨김 상태 반영
+    });
+  </script>
+</head>
+
+<body class="bg-gray-50 min-h-screen p-8">
+<div class="max-w-xl mx-auto bg-white p-6 rounded-xl shadow-md">
+  <h1 class="text-2xl font-bold mb-6 text-center">📝 피드 작성</h1>
+
+  <form id="feedForm" th:action="@{/feed/create}" th:object="${feed}"
+        method="post" enctype="multipart/form-data" class="space-y-5">
+
+    <!-- ✅ CSRF 히든 (null-safe) -->
+    <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}"/>
+
+    <!-- 내용 -->
+    <div>
+      <label class="block mb-1 text-sm font-medium text-gray-700">내용</label>
+      <textarea th:field="*{content}" rows="5" placeholder="내용을 입력하세요"
+                class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"></textarea>
+    </div>
+
+    <!-- 해시태그 -->
+    <div>
+      <label class="block mb-1 text-sm font-medium text-gray-700">해시태그 (쉼표 또는 공백 구분)</label>
+      <input th:field="*{hashtags}" type="text" placeholder="#예시, #스타일"
+             class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400">
+    </div>
+
+    <!-- 이미지 A -->
+    <div>
+      <label class="block mb-1 text-sm font-medium text-gray-700">이미지 A 업로드</label>
+      <input name="imageFile" type="file"
+             class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+    </div>
+
+    <!-- 투표 기능 체크 -->
+    <div class="flex items-center gap-2">
+      <input id="vote" type="checkbox" name="vote" class="h-4 w-4">
+      <label for="vote" class="text-sm font-medium text-gray-700">이 피드에 A/B 투표 기능 사용</label>
+    </div>
+
+    <!-- 투표 옵션 -->
+    <div id="vote-box" class="hidden border rounded-xl p-4 bg-gray-50 space-y-4">
+
+      <!-- 이미지 B -->
+      <div>
+        <label class="block mb-1 text-sm font-medium text-gray-700">이미지 B 업로드</label>
+        <input id="imageB" name="imageFileB" type="file"
+               class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+      </div>
+
+      <!-- 투표 시간 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block mb-1 text-sm font-medium text-gray-700">투표 시작 시간</label>
+          <input id="voteStartAtStr" name="voteStartAtStr" type="datetime-local"
+                 class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400">
+        </div>
+        <div>
+          <label class="block mb-1 text-sm font-medium text-gray-700">투표 종료 시간</label>
+          <input id="voteEndAtStr" name="voteEndAtStr" type="datetime-local"
+                 class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400">
+        </div>
+      </div>
+
+      <!-- 공개 정책 -->
+      <div class="flex items-center gap-2">
+        <input id="revealAfterEnd" type="checkbox" name="revealAfterEnd" checked class="h-4 w-4">
+        <label for="revealAfterEnd" class="text-sm text-gray-700">
+          투표 종료 후 결과 공개 (체크 해제 시 실시간 공개)
+        </label>
+      </div>
+    </div>
+
+    <!-- 등록 버튼 -->
+    <div class="text-center pt-3">
+      <button type="submit"
+              class="bg-blue-500 text-white px-6 py-2 rounded-xl hover:bg-blue-600 transition">
+        등록하기
+      </button>
+    </div>
+  </form>
+</div>
+</body>
+</html>

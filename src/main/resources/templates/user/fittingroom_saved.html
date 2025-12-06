@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>저장된 피팅룸 목록</title>
+
+  <meta name="_csrf" th:if="${_csrf}" th:content="${_csrf.token}" />
+  <meta name="_csrf_header" th:if="${_csrf}" th:content="${_csrf.headerName}" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <style>
+    .thumb {
+      aspect-ratio: 3/5;
+      background: #f8f8f8;
+      border-radius: 1rem;
+      overflow: hidden;
+      position: relative;
+    }
+    .thumb img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<header class="bg-white border-b mb-8">
+  <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-gray-800">👗 내 피팅룸 저장 목록</h1>
+    <a th:href="@{'/user/profile/' + ${me.id} + '/fittingroom'}"
+       class="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+      ← 피팅룸으로 돌아가기
+    </a>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 space-y-6">
+
+  <div th:if="${#lists.isEmpty(sets)}"
+       class="text-center text-gray-500 py-16 text-lg">
+    아직 저장된 조합이 없습니다 💭<br>
+    <a th:href="@{'/user/profile/' + ${me.id} + '/fittingroom'}"
+       class="text-blue-600 hover:underline text-sm">
+      피팅룸으로 이동하기 →
+    </a>
+  </div>
+
+  <div th:if="${!#lists.isEmpty(sets)}"
+       class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div th:each="s : ${sets}"
+         class="bg-white rounded-xl shadow p-4 space-y-3 flex flex-col justify-between">
+      <div class="thumb relative">
+        <img th:if="${s.topImage != null}" th:src="${s.topImage}" alt="top">
+        <img th:if="${s.bottomImage != null}" th:src="${s.bottomImage}" alt="bottom">
+        <img th:if="${s.outerImage != null}" th:src="${s.outerImage}" alt="outer">
+        <img th:if="${s.shoesImage != null}" th:src="${s.shoesImage}" alt="shoes">
+        <img th:if="${s.accessoryImage != null}" th:src="${s.accessoryImage}" alt="accessory">
+      </div>
+
+      <div>
+        <h2 class="font-semibold text-gray-800 truncate" th:text="${s.name}">My Outfit</h2>
+        <p class="text-xs text-gray-500" th:text="${#temporals.format(s.createdAt, 'yyyy-MM-dd HH:mm')}">2025-10-28</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <button class="px-2 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded"
+                th:attr="onclick='previewSet(' + ${s.id} + ')'">
+          👀 미리보기
+        </button>
+        <button class="px-2 py-1 text-sm bg-red-500 text-white hover:bg-red-600 rounded"
+                th:attr="onclick='deleteSet(' + ${s.id} + ')'">
+          🗑 삭제
+        </button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 👀 미리보기 모달 -->
+<div id="previewModal"
+     class="fixed inset-0 bg-black bg-opacity-70 hidden justify-center items-center z-50"
+     onclick="closePreview()">
+  <div class="relative bg-white p-4 rounded-xl shadow-xl"
+       onclick="event.stopPropagation()">
+    <div id="preview-stage" class="avatar-stage w-72 aspect-[3/5] relative bg-gray-50 rounded-xl overflow-hidden">
+      <img id="prev-top" class="layer" alt="top" />
+      <img id="prev-bottom" class="layer" alt="bottom" />
+      <img id="prev-outer" class="layer" alt="outer" />
+      <img id="prev-shoes" class="layer" alt="shoes" />
+      <img id="prev-accessory" class="layer" alt="accessory" />
+    </div>
+    <div class="text-center mt-4">
+      <button class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded" onclick="closePreview()">닫기</button>
+      <button class="px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded ml-2"
+              onclick="downloadPreview()">⬇️ 저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
+  const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+  const userId = /*[[${me.id}]]*/ '0';
+
+  // 👀 미리보기
+  async function previewSet(id) {
+    try {
+      const r = await fetch(`/api/fittingroom/${id}`);
+      if (!r.ok) throw new Error();
+      const s = await r.json();
+
+      document.getElementById("previewModal").classList.remove("hidden");
+      ["top","bottom","outer","shoes","accessory"].forEach(k=>{
+        const img = document.getElementById("prev-"+k);
+        img.src = s[k+"Image"] || "";
+      });
+    } catch (e) {
+      alert("미리보기 오류");
+    }
+  }
+
+  function closePreview() {
+    document.getElementById("previewModal").classList.add("hidden");
+  }
+
+  // ⬇️ 캡처 다운로드
+  function downloadPreview() {
+    const stage = document.getElementById("preview-stage");
+    html2canvas(stage).then(canvas=>{
+      const link = document.createElement("a");
+      link.download = "fittingroom_saved.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  // 🗑 삭제
+  async function deleteSet(id) {
+    if (!confirm("정말 삭제하시겠습니까?")) return;
+    try {
+      const res = await fetch(`/user/profile/${userId}/fittingroom/delete/${id}`, {
+        method: 'DELETE',
+        headers: csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {}
+      });
+      if (res.ok) {
+        alert("삭제 완료!");
+        location.reload();
+      } else {
+        alert("삭제 실패");
+      }
+    } catch (e) {
+      alert("삭제 중 오류 발생");
+    }
+  }
+</script>
+
+</body>
+</html>

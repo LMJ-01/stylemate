@@ -1,0 +1,27 @@
+<!-- /static/img/mannequin.svg  (3:5 비율, 투명배경, 중앙 정렬) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 500" width="300" height="500">
+  <defs>
+    <style>
+      .body { fill: #dcdfe3; }
+      .shadow { fill: #c7cbd1; }
+    </style>
+  </defs>
+
+  <!-- 몸통(살짝 라운드) -->
+  <path class="body" d="M150,40
+      c-20,0 -36,16 -36,36v25c-25,15 -34,40 -34,66v32c0,18 6,32 16,43l0,120
+      c0,16 12,28 28,28h52c16,0 28,-12 28,-28V242c10,-11 16,-25 16,-43v-32
+      c0,-26 -9,-51 -34,-66v-25c0,-20 -16,-36 -36,-36z"></path>
+
+  <!-- 목 & 머리 -->
+  <circle class="body" cx="150" cy="20" r="18"></circle>
+  <rect class="body" x="138" y="32" width="24" height="16" rx="6"></rect>
+
+  <!-- 다리(기둥) -->
+  <rect class="shadow" x="144" y="350" width="12" height="70" rx="6"></rect>
+  <rect class="shadow" x="120" y="420" width="60" height="10" rx="5"></rect>
+  <rect class="shadow" x="100" y="430" width="100" height="10" rx="5"></rect>
+
+  <!-- 바닥 -->
+  <rect class="shadow" x="70" y="440" width="160" height="18" rx="9"></rect>
+</svg>

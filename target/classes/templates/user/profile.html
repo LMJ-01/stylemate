@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title th:text="${profileUser != null ? profileUser.nickname + '님의 프로필' : '프로필'}">프로필</title>
+
+  <!-- ✅ CSRF null-safe -->
+  <meta name="_csrf" th:content="${_csrf?.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf?.headerName}"/>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<!-- 🔝 네비게이션 바 -->
+<nav class="bg-white shadow mb-8">
+  <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+    <div class="text-xl font-bold text-gray-800">StyleMate</div>
+    <div class="space-x-4 text-sm">
+      <a href="/" class="text-gray-600 hover:text-black">🏠 홈</a>
+      <a href="/feed/list" class="text-gray-600 hover:text-black">📰 전체 피드</a>
+      <a th:href="@{/user/profile/{id}(id=${loginUserId})}" class="text-gray-600 hover:text-black">👤 내 프로필</a>
+
+      <!-- ✅ 로그아웃은 POST -->
+      <form th:action="@{/logout}" method="post" class="inline">
+        <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}"/>
+        <button type="submit" class="text-gray-600 hover:text-black">🚪 로그아웃</button>
+      </form>
+    </div>
+  </div>
+</nav>
+
+<!-- 👤 프로필 카드 -->
+<div class="w-full max-w-2xl mx-auto bg-white rounded-xl shadow-md p-8 space-y-6"
+     th:with="imgUrl=${(profileUser != null and !#strings.isEmpty(profileUser.profileImage)) ? profileUser.profileImage : '/img/default.png'}">
+
+  <!-- 프로필 이미지 + 닉네임 -->
+  <div class="flex items-center space-x-6">
+    <img id="profileImage"
+         th:src="${imgUrl}"
+         alt="프로필 이미지"
+         class="w-32 h-32 rounded-full border object-cover shadow cursor-pointer" />
+
+    <div class="flex-1">
+      <div class="flex justify-between items-center">
+        <h2 class="text-2xl font-bold text-gray-800"
+            th:text="${profileUser != null ? profileUser.nickname : '닉네임'}">닉네임</h2>
+
+        <a th:if="${profileUser != null and profileUser.id == loginUserId}"
+           href="/user/edit"
+           class="text-sm text-gray-500 hover:text-gray-800 hover:underline">
+          ⚙️ 프로필 수정
+        </a>
+      </div>
+
+      <p class="text-base text-gray-500"
+         th:text="${profileUser != null ? profileUser.email : ''}">이메일</p>
+    </div>
+  </div>
+
+  <!-- 자기소개 -->
+  <div>
+    <h3 class="text-lg font-semibold text-gray-700 mb-1">소개</h3>
+    <p class="text-base text-gray-700 whitespace-pre-wrap"
+       th:text="${(profileUser != null and !#strings.isEmpty(profileUser.bio)) ? profileUser.bio : '소개글이 없습니다.'}"></p>
+  </div>
+
+  <!-- 피드 보기 링크 + 피팅룸 버튼 -->
+<div class="flex justify-between items-center mt-4" th:if="${profileUser != null}">
+  <a th:href="@{/feed/user/{id}(id=${profileUser.id})}"
+     class="text-sm text-blue-600 hover:underline">
+    📸 이 사람의 피드 보기
+  </a>
+
+  <!-- ✅ 본인일 때만 피팅룸 버튼 표시 -->
+  <a th:if="${profileUser.id == loginUserId}"
+     th:href="@{'/user/profile/' + ${profileUser.id} + '/fittingroom'}"
+     class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">
+     🧍‍♂️ 내 FittingRoom 가기
+  </a>
+</div>
+</div>
+
+<!-- 🖼️ 프로필 이미지 확대 모달 -->
+<div id="imageModal"
+     class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 hidden"
+     onclick="closeImageModal()">
+  <img id="modalImage"
+       src=""
+       class="max-w-[90%] max-h-[90%] border-4 border-white rounded-xl shadow-2xl" />
+</div>
+
+<!-- 📜 모달 스크립트 -->
+<script>
+  const profileImg = document.getElementById("profileImage");
+  const modal = document.getElementById("imageModal");
+  const modalImg = document.getElementById("modalImage");
+
+  if (profileImg && modal && modalImg) {
+    profileImg.addEventListener("click", function () {
+      modal.classList.remove("hidden");
+      modalImg.src = this.src;
+    });
+
+    window.closeImageModal = function () {
+      modal.classList.add("hidden");
+    };
+  }
+</script>
+
+</body>
+</html>
