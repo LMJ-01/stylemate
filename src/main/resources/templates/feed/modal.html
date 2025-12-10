@@ -3,7 +3,19 @@
   <div class="flex flex-col lg:flex-row gap-4">
     <!-- 피드 이미지 -->
     <div class="lg:w-1/2 w-full">
-      <img th:src="${feed.imageUrl}" alt="피드 이미지" class="rounded-lg w-full object-contain shadow">
+      <!-- 투표 피드: A/B 모두 노출 -->
+      <div th:if="${feed.vote}" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="aspect-[4/5] w-full overflow-hidden rounded-md bg-gray-100">
+          <img th:src="${feed.imageUrl}" alt="이미지 A" class="w-full h-full object-contain">
+        </div>
+        <div class="aspect-[4/5] w-full overflow-hidden rounded-md bg-gray-100" th:if="${feed.imageUrlB != null}">
+          <img th:src="${feed.imageUrlB}" alt="이미지 B" class="w-full h-full object-contain">
+        </div>
+      </div>
+      <!-- 일반 피드 -->
+      <div th:if="${!feed.vote}">
+        <img th:src="${feed.imageUrl}" alt="피드 이미지" class="rounded-lg w-full object-contain shadow">
+      </div>
     </div>
 
     <!-- 피드 내용 -->
@@ -21,28 +33,29 @@
 
       <!-- 좋아요 -->
       <div class="text-sm text-pink-600">
-        <button type="button" th:id="|like-btn-${feed.id}|" th:onclick="|likeFeed(${feed.id})|">
-          ❤️ <span th:id="|like-count-${feed.id}|" th:text="${feed.likeCount}">0</span> 좋아요
+        <button type="button"
+                th:id="|modal-like-btn-${feed.id}|"
+                th:onclick="|likeFeed(${feed.id})|">
+          ❤ <span th:id="|modal-like-count-${feed.id}|" th:text="${feed.likeCount}">0</span> 좋아요
         </button>
       </div>
 
-      <!-- 댓글 영역 -->
+      <!-- 댓글 리스트 -->
       <div class="bg-gray-100 rounded p-3 max-h-[300px] overflow-y-auto" id="comment-container">
         <div class="flex items-center justify-between mb-2">
-          <h3 class="font-semibold text-sm">💬 댓글</h3>
+          <h3 class="font-semibold text-sm">댓글</h3>
           <span class="text-xs text-gray-500"
                 th:id="|comment-count-${feed.id}|"
                 th:text="${feed.commentCount}">0</span>
         </div>
 
-        <!-- ✅ comment-list-{feed.id} 로 변경 -->
         <div th:id="|comment-list-${feed.id}|">
           <div th:each="comment : ${feed.comments}"
                th:id="|comment-${comment.id}|"
                class="text-sm text-gray-800 border-b py-2 relative group"
                th:attr="data-user-id=${comment.user.id}">
-            <strong th:text="${comment.user.nickname}">닉네임</strong>:
-            <span th:id="|content-${comment.id}|" th:text="${comment.content}">댓글내용</span>
+            <strong th:text="${comment.user.nickname}">작성자</strong>:
+            <span th:id="|content-${comment.id}|" th:text="${comment.content}">댓글 내용</span>
             <div class="text-xs text-gray-500 mt-1"
                  th:text="${#temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm:ss')}">
               2025-01-01 12:00:00
@@ -73,7 +86,6 @@
                placeholder="댓글을 입력하세요"
                required>
 
-        <!-- ✅ onclick 동일하게 -->
         <button type="button"
                 th:onclick="|submitComment(${feed.id})|"
                 class="bg-gray-800 text-white px-4 py-2 rounded text-sm hover:bg-black">

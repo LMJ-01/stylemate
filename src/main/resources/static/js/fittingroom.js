@@ -1,14 +1,20 @@
-(function () {
+﻿(function () {
+  'use strict';
+
   // ===== 공용 유틸 =====
   const $  = (sel, p = document) => p.querySelector(sel);
   const $$ = (sel, p = document) => Array.from(p.querySelectorAll(sel));
   const byId = (id) => document.getElementById(id);
+
   const BLANK =
     'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-  const proxy = (u) => (!u ? '' : `/img/proxy?url=${encodeURIComponent(u)}`);
-  const CROP_API_URL = 'http://127.0.0.1:5001/crop'; // 🔥 배경제거 서버
 
-  // 네이버 검색용 카테고리 한글 라벨
+  const proxy = (u) => (!u ? '' : `/img/proxy?url=${encodeURIComponent(u)}`);
+
+  // 배경 제거 서버 (Flask crop 서버)
+  const CROP_API_URL = 'http://127.0.0.1:5001/crop';
+
+  // 카테고리 한글 라벨
   const CATEGORY_LABEL_KO = {
     top: '상의',
     bottom: '하의',
@@ -17,98 +23,101 @@
     accessory: '악세서리',
   };
 
-  // 🔥 메인카테고리 → 서브카테고리 옵션
+  // 메인 카테고리 → 서브카테고리 옵션
   const SUBCATEGORY_OPTIONS = {
     top: [
-      { value: '',            label: '(전체)' },
-      { value: 'short_sleeve',label: '반팔' },
+      { value: '', label: '(전체)' },
+      { value: 'short_sleeve', label: '반팔' },
       { value: 'long_sleeve', label: '긴팔' },
-      { value: 'hoodie',      label: '후드티' },
-      { value: 'shirt',       label: '셔츠' },
-      { value: 'sweatshirt',  label: '맨투맨' },
+      { value: 'hoodie', label: '후드티' },
+      { value: 'shirt', label: '셔츠' },
+      { value: 'sweatshirt', label: '맨투맨' },
     ],
     bottom: [
-      { value: '',            label: '(전체)' },
+      { value: '', label: '(전체)' },
       { value: 'short_pants', label: '반바지' },
-      { value: 'long_pants',  label: '긴바지' },
-      { value: 'training',    label: '트레이닝' },
-      { value: 'jeans',       label: '청바지' },
+      { value: 'long_pants', label: '긴바지' },
+      { value: 'training', label: '트레이닝 바지' },
+      { value: 'jeans', label: '청바지' },
     ],
     outer: [
-      { value: '',             label: '(전체)' },
-      { value: 'windbreaker',  label: '바람막이' },
-      { value: 'padding',      label: '패딩' },
-      { value: 'light_padding',label: '경량패딩' },
-      { value: 'coat',         label: '코트' },
-      { value: 'jacket',       label: '자켓' },
+      { value: '', label: '(전체)' },
+      { value: 'windbreaker', label: '바람막이' },
+      { value: 'padding', label: '패딩' },
+      { value: 'light_padding', label: '경량 패딩' },
+      { value: 'coat', label: '코트' },
+      { value: 'jacket', label: '자켓' },
     ],
     shoes: [
-      { value: '',         label: '(전체)' },
-      { value: 'running',  label: '러닝화' },
+      { value: '', label: '(전체)' },
+      { value: 'running', label: '러닝화' },
       { value: 'sneakers', label: '스니커즈' },
-      { value: 'slipper',  label: '슬리퍼' },
-      { value: 'boots',    label: '부츠' },
+      { value: 'slipper', label: '슬리퍼' },
+      { value: 'boots', label: '부츠' },
     ],
     accessory: [
-      { value: '',     label: '(전체)' },
-      { value: 'cap',  label: '모자' },
-      { value: 'bag',  label: '가방' },
-      { value: 'socks',label: '양말' },
-      { value: 'etc',  label: '기타' },
+      { value: '', label: '(전체)' },
+      { value: 'cap', label: '모자' },
+      { value: 'bag', label: '가방' },
+      { value: 'socks', label: '양말' },
+      { value: 'etc', label: '기타 악세서리' },
     ],
   };
 
-  // 🔥 서브카테고리 → 네이버 검색용 키워드 매핑
+  // 서브카테고리 → 네이버 이미지 검색용 키워드
   const SUBCATEGORY_QUERY_KEYWORD = {
     // top
-    short_sleeve:  '반팔 티셔츠',
-    long_sleeve:   '긴팔 티셔츠',
-    hoodie:        '후드티',
-    shirt:         '셔츠',
-    sweatshirt:    '맨투맨',
+    short_sleeve: '반팔 티셔츠',
+    long_sleeve: '긴팔 티셔츠',
+    hoodie: '후드티',
+    shirt: '셔츠',
+    sweatshirt: '맨투맨',
     // bottom
-    short_pants:   '반바지',
-    long_pants:    '긴바지',
-    training:      '트레이닝 바지',
-    jeans:         '청바지',
+    short_pants: '반바지',
+    long_pants: '긴바지',
+    training: '트레이닝 바지',
+    jeans: '청바지',
     // outer
-    windbreaker:   '바람막이',
-    padding:       '패딩',
-    light_padding: '경량패딩',
-    coat:          '코트',
-    jacket:        '자켓',
+    windbreaker: '바람막이',
+    padding: '패딩',
+    light_padding: '경량 패딩',
+    coat: '코트',
+    jacket: '자켓',
     // shoes
-    running:       '러닝화',
-    sneakers:      '스니커즈',
-    slipper:       '슬리퍼',
-    boots:         '부츠',
+    running: '러닝화',
+    sneakers: '스니커즈',
+    slipper: '슬리퍼',
+    boots: '부츠',
     // accessory
-    cap:           '모자',
-    bag:           '가방',
-    socks:         '양말',
-    etc:           '패션 악세서리',
+    cap: '모자',
+    bag: '가방',
+    socks: '양말',
+    etc: '패션 악세서리',
   };
 
-  // 전역 네임스페이스
-window.FittingRoom = {
-  equip,
-  equipFromDataset,
-  equipFromDatasetWithCrop,
-};
+  // 외부에서 호출 가능한 API (다른 스크립트에서 사용)
+  window.FittingRoom = {
+    equip,
+    equipFromDataset,
+    equipFromDatasetWithCrop,
+  };
 
-
-  // 레이어/엔드포인트/유저
+  // 레이어 & API & 유저
   let layers = {};
   let API = { random: '', filterAdvanced: '', save: '', searchImages: '' };
   let userId = null;
+  // 검색 결과 캐시 & 페이지 상태 (카테고리별)
+  const listCache = {};
+  const pageState = {};
+  const PAGE_SIZE = 24;
 
-  // ❤️ 찜(좋아요) 상태 저장용 (key: category|imageUrl)
+  // 위시리스트 상태 (key: category|imageUrl)
   const favorites = new Map();
 
   // CSRF
-  const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+  const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
   const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
-  
+
   // ===== 숫자/색상 유틸 =====
   function clamp(v, min, max) {
     return Math.max(min, Math.min(max, v));
@@ -127,7 +136,7 @@ window.FittingRoom = {
           g: parseInt(m[2], 16),
           b: parseInt(m[3], 16),
         }
-      : { r: 230, g: 203, b: 179 }; // 기본 피부색
+      : { r: 230, g: 203, b: 179 }; // 기본 피부톤
   }
 
   function toHex({ r, g, b }) {
@@ -139,65 +148,61 @@ window.FittingRoom = {
     );
   }
 
-  // ----- 공용: 안전한 이미지 URL -----
-// 맨 위쪽 util 부분에 있는 safeImg만 남기고 아래 중복 정의는 삭제해도 됨
-function safeImg(u) {
-  if (!u) return BLANK;
-  // data: 로 시작하는 건 그대로 사용
-  if (u.startsWith('data:')) return u;
+  // ===== 이미지 URL 안전 처리 =====
+  function safeImg(u) {
+    if (!u) return BLANK;
+    // data: URL이면 그대로 사용
+    if (u.startsWith('data:')) return u;
 
-  // 🔥 http(s) 외부 주소는 전부 우리 프록시를 태운다
-  if (u.startsWith('http://') || u.startsWith('https://')) {
-    return proxy(u);   // -> /img/proxy?url=...
+    // 외부 http(s)도 일단 원본 사용 (proxy 502 대비)
+    return u;
   }
 
-  // 그 외 (상대경로 등)는 그대로
-  return u;
-}
+  // ===== 데이터셋 + 배경 크롭 후 equip =====
+  async function equipFromDatasetWithCrop(card) {
+    const d = card.dataset;
+    const category = (d.category || getCurrentCategory() || 'top').toLowerCase();
 
-// ----- 배경제거 서버까지 거쳐서 입히기 -----
-async function equipFromDatasetWithCrop(card) {
-  const d = card.dataset;
-  const category = (d.category || getCurrentCategory() || 'top').toLowerCase();
-
-  let imageUrl = d.croppedImage || d.image || d.thumb || '';
-  if (!imageUrl) {
-    console.warn('[equipFromDatasetWithCrop] imageUrl 없음');
-    return;
-  }
-
-  // 아직 크롭 안 했고 외부 이미지인 경우
-  if (!d.croppedImage && imageUrl.startsWith('http') && !imageUrl.startsWith(location.origin)) {
-    try {
-      const res = await fetch(CROP_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl: imageUrl }),   // 🔥 여기만 수정!
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.success && data.pngBase64) {
-          const base64Url = "data:image/png;base64," + data.pngBase64;
-          imageUrl = base64Url;
-          d.croppedImage = base64Url;  // 다음부터 재사용
-        }
-      }
-    } catch (e) {
-      console.warn('[equipFromDatasetWithCrop] crop 실패, 원본 사용:', e);
+    let imageUrl = safeImg(d.croppedImage || d.image || d.thumb || '');
+    if (!imageUrl) {
+      console.warn('[equipFromDatasetWithCrop] imageUrl 없음');
+      return;
     }
+
+    // 이미 crop된 이미지가 없으면 crop 서버에 요청
+    if (!d.croppedImage) {
+      const raw = d.croppedImage || d.image || d.thumb || '';
+      const absolute = raw.startsWith('http')
+        ? raw
+        : new URL(raw, location.origin).toString();
+
+      try {
+        const res = await fetch(CROP_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageUrl: absolute }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.success && data.pngBase64) {
+            const base64Url = 'data:image/png;base64,' + data.pngBase64;
+            imageUrl = base64Url;
+            d.croppedImage = base64Url;
+          }
+        }
+      } catch (e) {
+        console.warn('[equipFromDatasetWithCrop] crop 실패, 원본 사용:', e);
+      }
+    }
+
+    equip({
+      category,
+      name: d.name,
+      imageUrl,
+      croppedImage: d.croppedImage || null,
+    });
   }
-
-  equip({
-    category,
-    name: d.name,
-    imageUrl,
-    croppedImage: d.croppedImage || null,
-  });
-}
-
-
-
 
   // ===== 초기화 =====
   function init() {
@@ -209,7 +214,9 @@ async function equipFromDatasetWithCrop(card) {
     API = {
       random:
         endpointsEl?.dataset.random ||
-        (userId ? `/user/profile/${userId}/fittingroom/random` : '/fittingroom/random'),
+        (userId
+          ? `/user/profile/${userId}/fittingroom/random`
+          : '/fittingroom/random'),
       filterAdvanced:
         endpointsEl?.dataset.filterAdvanced ||
         (userId
@@ -217,13 +224,15 @@ async function equipFromDatasetWithCrop(card) {
           : '/fittingroom/filter/advanced'),
       save:
         endpointsEl?.dataset.save ||
-        (userId ? `/user/profile/${userId}/fittingroom/save` : '/fittingroom/save'),
+        (userId
+          ? `/user/profile/${userId}/fittingroom/save`
+          : '/fittingroom/save'),
       searchImages: endpointsEl?.dataset.searchImages || '/api/images/search',
     };
 
     console.log('[FittingRoom] API 설정:', API);
 
-    // 레이어 바인딩
+    // 아바타 레이어 노드
     layers = {
       face: byId('layer-face'),
       top: byId('layer-top'),
@@ -233,26 +242,25 @@ async function equipFromDatasetWithCrop(card) {
       accessory: byId('layer-accessory'),
     };
 
-    // 초기 서버 렌더링된 카드들에 favKey 부여
+    // 기존 리스트 카드에 favKey 세팅
     $$('#itemListWrapper [data-role="item-card"]').forEach((card) => {
       const favKey = makeFavKeyFromDataset(card.dataset);
       card.dataset.favKey = favKey;
     });
 
-    // 현재 카테고리 표시 동기화 + 서브카테고리 옵션 연동
+    // 필터 카테고리 변경 → 탭/서브카테고리 연동
     const filterCategorySel = byId('filter-category');
-    const filterSubSel = byId('filter-subcategory');
 
     function handleCategoryChange() {
       const cat = filterCategorySel.value || 'top';
       updateCurrentCategory(cat);
       switchTab(cat);
-      updateSubcategoryOptions(cat); // 🔥 메인 카테고리 바뀔 때 서브 옵션 갱신
+      updateSubcategoryOptions(cat);
     }
 
     filterCategorySel?.addEventListener('change', handleCategoryChange);
 
-    // 탭 버튼 클릭 시 카테고리 변경
+    // 상단 탭 클릭 시 필터 카테고리도 같이 변경
     $$('.item-tab').forEach((btn) => {
       btn.addEventListener('click', () => {
         const cat = btn.dataset.category || 'top';
@@ -260,14 +268,11 @@ async function equipFromDatasetWithCrop(card) {
         handleCategoryChange();
       });
     });
-    
-     
 
-    // ===== 리스트 영역 클릭 이벤트 위임 =====
+    // 아이템 리스트 영역 클릭 (카드 equip / 하트 토글)
     const wrapper = byId('itemListWrapper');
     if (wrapper) {
       wrapper.addEventListener('click', (e) => {
-        // 1) 하트 클릭
         const heart = e.target.closest('.like-btn');
         if (heart) {
           e.stopPropagation();
@@ -275,7 +280,6 @@ async function equipFromDatasetWithCrop(card) {
           return;
         }
 
-        // 2) 카드 클릭 -> 배경제거 후 아바타에 입히기
         const card = e.target.closest('[data-role="item-card"]');
         if (card) {
           equipFromDatasetWithCrop(card);
@@ -284,7 +288,7 @@ async function equipFromDatasetWithCrop(card) {
       });
     }
 
-    // ===== 찜 목록 영역 클릭 이벤트 위임 =====
+    // 위시리스트 영역 클릭
     const favWrapper = byId('wishlistWrapper');
     if (favWrapper) {
       favWrapper.addEventListener('click', (e) => {
@@ -302,17 +306,26 @@ async function equipFromDatasetWithCrop(card) {
       });
     }
 
-    // 버튼 핸들러
-    byId('btn-random-global')?.addEventListener('click', randomGlobal);
-    byId('btn-random-by-category')?.addEventListener('click', randomByCategory);
+    // 버튼 이벤트 바인딩
+    byId('btn-random-global')?.addEventListener('click', () =>
+      alert('랜덤 추천 기능이 비활성화되었습니다.')
+    );
+    byId('btn-random-by-category')?.addEventListener('click', () =>
+      alert('카테고리 랜덤 추천 기능이 비활성화되었습니다.')
+    );
     byId('btn-clear-category')?.addEventListener('click', clearCurrentCategory);
     byId('btn-clear-all')?.addEventListener('click', clearAll);
     byId('btn-apply-filters')?.addEventListener('click', applyFilters);
     byId('btn-clear-filters')?.addEventListener('click', clearFilters);
     byId('btn-save-set')?.addEventListener('click', saveSet);
     byId('btn-download')?.addEventListener('click', downloadImage);
+    byId('face-upload')?.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) handleFaceUpload(file);
+    });
+    byId('btn-face-clear')?.addEventListener('click', clearFace);
 
-    // 찜 목록 전체 삭제
+    // 위시리스트 전체 삭제
     byId('btn-clear-wishlist')?.addEventListener('click', () => {
       favorites.clear();
       $$('.like-btn').forEach((h) => {
@@ -322,28 +335,30 @@ async function equipFromDatasetWithCrop(card) {
       renderFavorites();
     });
 
-    // 초기 카테고리
+    // 초기 카테고리/서브카테고리 설정
     const initialCat = filterCategorySel?.value || 'top';
-    updateSubcategoryOptions(initialCat); // 🔥 처음 로딩 시도 서브 옵션
+    updateSubcategoryOptions(initialCat);
     updateCurrentCategory(initialCat);
     switchTab(initialCat);
 
-    // 아바타 개인화 적용 (avatar.json)
+    // 아바타 기본값 설정 (avatar.json 기준)
     initAvatarBase();
 
-    // 초기 서버 렌더링 아이템 개수 표시
+    // 초기 아이템 개수 표시
     syncInitialCount(initialCat);
 
-    // 초기 찜 목록 렌더
+    // 초기 위시리스트 렌더링
     renderFavorites();
   }
 
-  // 🔥 메인 카테고리에 따라 서브카테고리 옵션 채우기
+  // 메인 카테고리 변경 시 서브카테고리 옵션 채우기
   function updateSubcategoryOptions(mainCat) {
     const sel = byId('filter-subcategory');
     if (!sel) return;
 
-    const options = SUBCATEGORY_OPTIONS[mainCat] || [{ value: '', label: '(전체)' }];
+    const options =
+      SUBCATEGORY_OPTIONS[mainCat] || [{ value: '', label: '(전체)' }];
+
     sel.innerHTML = '';
     options.forEach((opt) => {
       const o = document.createElement('option');
@@ -353,10 +368,10 @@ async function equipFromDatasetWithCrop(card) {
     });
   }
 
-  // ===== 찜 key 생성 =====
+  // ===== 위시 키 생성 =====
   function makeFavKeyFromDataset(d) {
     const cat = (d.category || '').toLowerCase();
-    const img = d.image || d.imageUrl || d.imageurl || '';
+    const img = d.image || d.imageUrl || d.thumb || '';
     return `${cat}|${img}`;
   }
 
@@ -366,19 +381,19 @@ async function equipFromDatasetWithCrop(card) {
     return `${cat}|${img}`;
   }
 
-  // 하트 동기화 (아이템 목록 + 찜 목록 모두)
+  // 여러 카드 하트 모양 동기화
   function syncHearts(key, liked) {
     $$('[data-fav-key]').forEach((card) => {
       if (card.dataset.favKey === key) {
         const heart = card.querySelector('.like-btn');
         if (!heart) return;
         heart.classList.toggle('liked', liked);
-        heart.textContent = liked ? '❤' : '♡';
+        heart.textContent = liked ? '♥' : '♡';
       }
     });
   }
 
-  // ===== 하트 토글 =====
+  // ===== 위시리스트 토글 =====
   function toggleLike(heartEl) {
     const card = heartEl.closest('[data-role="item-card"]');
     if (!card) return;
@@ -390,7 +405,11 @@ async function equipFromDatasetWithCrop(card) {
     if (nowLiked) {
       favorites.set(key, {
         category: card.dataset.category,
-        imageUrl: card.dataset.image || card.dataset.imageUrl,
+        imageUrl:
+          card.dataset.croppedImage ||
+          card.dataset.image ||
+          card.dataset.imageUrl ||
+          '',
         name: card.dataset.name,
         brand: card.dataset.brand,
         color: card.dataset.color,
@@ -441,206 +460,260 @@ async function equipFromDatasetWithCrop(card) {
     const countEl = byId('itemCount');
     if (countEl) countEl.textContent = `(${count}개)`;
   }
-  
-  // ===== 아바타 체형에 맞춰 옷 레이아웃 보정 =====
-function applyClothesLayoutForAvatar(stage) {
-  if (!stage) return;
 
-  // avatar.json 에서 넣어둔 값들 읽기
-  const hScale = parseFloat(stage.style.getPropertyValue('--heightScale') || '1') || 1;   // 0.85 ~ 1.15
-  const wScale = parseFloat(stage.style.getPropertyValue('--weightScale') || '1') || 1;   // 0.85 ~ 1.3
-  const legH   = parseFloat(stage.style.getPropertyValue('--legHeight')    || '1') || 1;   // 다리 비율
-  const body   = (stage.dataset.bodyShape || 'regular').toLowerCase();                    // slim / regular / plus
+  // ===== 아바타 비율에 맞게 옷 레이아웃 조정 =====
+  function applyClothesLayoutForAvatar(stage) {
+    if (!stage) return;
 
-  // === 1) Y 위치 보정 (위아래) ===
-  // 기준값: top 34%, bottom 56%, shoes 82% (HTML의 CSS랑 맞춰져 있음)
-  // heightScale, legHeight 에 따라 위/아래로 px 단위 이동
-  let topOffsetY    = -(hScale - 1) * 20 * 10;      // 키 클수록 상의 약간 위로
-  let bottomOffsetY = (legH   - 1) * 22 * 10;       // 다리 길수록 바지 아래로
-  let shoesOffsetY  = (legH   - 1) * 25 * 10;       // 다리 길수록 신발도 아래로
-  let outerOffsetY  = topOffsetY * 0.9;             // 아우터는 상의랑 비슷하게
+    const stageW = stage.clientWidth || 300;
+    const stageH = stage.clientHeight || 500;
 
-  // === 2) 스케일 보정 (옷 폭/크기) ===
-  let topScale    = 1 + (wScale - 1) * 0.6;
-  let bottomScale = 1 + (wScale - 1) * 0.5;
-  let shoesScale  = 1 + (wScale - 1) * 0.2;
-  let outerScale  = topScale * 1.03;    // 아우터는 상의보다 살짝 크게
+    const hScale =
+      parseFloat(stage.style.getPropertyValue('--heightScale') || '1') || 1;
+    const wScale =
+      parseFloat(stage.style.getPropertyValue('--weightScale') || '1') || 1;
+    const legH =
+      parseFloat(stage.style.getPropertyValue('--legHeight') || '1') || 1;
+    const body = (stage.dataset.bodyShape || 'regular').toLowerCase();
+    const shoulderScale =
+      parseFloat(stage.style.getPropertyValue('--shoulderScale') || '1') || 1;
 
-  // 체형별 추가 보정
-  if (body === 'slim') {
-    topScale    -= 0.05;
-    bottomScale -= 0.05;
-  } else if (body === 'plus') {
-    topScale    += 0.08;
-    bottomScale += 0.08;
+    // 기준 앵커 (어깨/허리/엉덩이/발) - 키/어깨/다리 길이에 따라 조정
+    const shoulderY = 0.265 * stageH - (hScale - 1) * 0.03 * stageH - (shoulderScale - 1) * 0.045 * stageH;
+    const waistY    = 0.51 * stageH + (hScale - 1) * 0.015 * stageH;
+    const hipY      = 0.63 * stageH + (legH - 1) * 0.045 * stageH;
+    const footY     = 0.93 * stageH + (legH - 1) * 0.06 * stageH;
+
+    // Y 위치 세팅 (퍼센트로 저장해서 CSS에서 사용)
+    // 상의를 더 아래로, 바지는 약간 더 아래로, 신발은 약간 위로
+    const topYPct    = ((shoulderY + 0.20 * stageH) / stageH) * 100; // 더 아래로
+    const outerYPct  = topYPct;
+    const bottomYPct = ((hipY + 0.05 * stageH) / stageH) * 100;
+    const shoesYPct  = ((footY - 0.015 * stageH) / stageH) * 100;
+    const accessoryYPct = 30;
+
+    // 스케일 (체형/어깨 넓이에 따라 조정)
+    let topScale = 1.18 + (wScale - 1) * 0.6; // 상의 크기 소폭 축소
+    let bottomScale = 1.18 + (wScale - 1) * 0.65; // 하의 유지
+    let shoesScale = 1.15 + (wScale - 1) * 0.25;  // 신발 크게
+    let outerScale = topScale * 1.02;
+
+    if (body === 'slim') {
+      topScale   -= 0.05;
+      bottomScale -= 0.05;
+    } else if (body === 'plus') {
+      topScale   += 0.08;
+      bottomScale += 0.08;
+    }
+
+    stage.style.setProperty('--topY', `${topYPct.toFixed(2)}%`);
+    stage.style.setProperty('--outerY', `${outerYPct.toFixed(2)}%`);
+    stage.style.setProperty('--bottomY', `${bottomYPct.toFixed(2)}%`);
+    stage.style.setProperty('--shoesY', `${shoesYPct.toFixed(2)}%`);
+    stage.style.setProperty('--accessoryY', `${accessoryYPct}%`);
+
+    stage.style.setProperty('--topScale', topScale.toFixed(2));
+    stage.style.setProperty('--bottomScale', bottomScale.toFixed(2));
+    stage.style.setProperty('--shoesScale', shoesScale.toFixed(2));
+    stage.style.setProperty('--outerScale', outerScale.toFixed(2));
+
+    // 기준 너비(px)를 퍼센트로 환산
+    const baseTorsoWidth     = stageW * 0.58; // 상의 폭 소폭 축소
+    const baseOuterWidth     = stageW * 0.62;
+    const baseLegWidth       = stageW * 0.56; // 하의 기본 폭 유지
+    const baseFootWidth      = stageW * 0.38; // 신발 기본 폭 유지
+    const baseAccessoryWidth = stageW * 0.3;
+
+    const topWidthPx =
+      baseTorsoWidth *
+      clamp(1 + (wScale - 1) * 0.8 + (shoulderScale - 1) * 0.55, 0.95, 1.5);
+    const outerWidthPx =
+      baseOuterWidth *
+      clamp(1 + (wScale - 1) * 0.8 + (shoulderScale - 1) * 0.6, 0.85, 1.4);
+    const bottomWidthPx =
+      baseLegWidth * clamp(1 + (wScale - 1) * 0.75, 0.9, 1.5);
+    const shoesWidthPx =
+      baseFootWidth * clamp(1 + (wScale - 1) * 0.3, 0.9, 1.4);
+    const accessoryWidthPx =
+      baseAccessoryWidth * clamp(1 + (wScale - 1) * 0.2, 0.8, 1.2);
+
+    const toPct = (px) => ((px / stageW) * 100).toFixed(1);
+
+    stage.style.setProperty('--topWidth', `${toPct(topWidthPx)}%`);
+    stage.style.setProperty('--outerWidth', `${toPct(outerWidthPx)}%`);
+    stage.style.setProperty('--bottomWidth', `${toPct(bottomWidthPx)}%`);
+    stage.style.setProperty('--shoesWidth', `${toPct(shoesWidthPx)}%`);
+    stage.style.setProperty('--accessoryWidth', `${toPct(accessoryWidthPx)}%`);
   }
 
-  // === 3) CSS 변수로 stage에 주입 (HTML의 style과 연결됨) ===
-  stage.style.setProperty('--topOffsetY',    `${topOffsetY.toFixed(1)}px`);
-  stage.style.setProperty('--bottomOffsetY', `${bottomOffsetY.toFixed(1)}px`);
-  stage.style.setProperty('--shoesOffsetY',  `${shoesOffsetY.toFixed(1)}px`);
-  stage.style.setProperty('--outerOffsetY',  `${outerOffsetY.toFixed(1)}px`);
-
-  stage.style.setProperty('--topScale',    topScale.toFixed(2));
-  stage.style.setProperty('--bottomScale', bottomScale.toFixed(2));
-  stage.style.setProperty('--shoesScale',  shoesScale.toFixed(2));
-  stage.style.setProperty('--outerScale',  outerScale.toFixed(2));
-}
-
-
-   // ===== 아바타 개인화 (avatar.json 기준) =====
+  // ===== avatar.json 기반 아바타 초기화 =====
   async function initAvatarBase() {
-  const base = byId('avatarBase');
-  if (!base) return;
+    const base = byId('avatarBase');
+    if (!base) return;
 
-  const stage = base.closest('.avatar-stage');
-  const inner = stage?.querySelector('.avatar-inner');
+    const stage = base.closest('.avatar-stage');
+    const inner = stage?.querySelector('.avatar-inner');
 
-  const url = base.dataset.avatarUrl;
-  if (!url) {
-    console.warn('[avatarBase] data-avatar-url 없음');
-    return;
-  }
-
-  try {
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) throw new Error('avatar.json 요청 실패');
-
-    const a = await res.json();
-    console.log('[avatarBase] avatar.json:', a);
-
-    // ---- ① 값 꺼내기 ----
-    const heightCm = toNum(a.heightCm) || 175;
-    const weightKg = toNum(a.weightKg) || 70;
-    const body = String(a.bodyShape || 'regular').toLowerCase();
-    const toneBrightness = clamp(toNum(a.toneBrightness) || 1.0, 0.85, 1.15);
-    const skinHex = a.skinToneHex || a.skinTone || '#e6cbb3';
-
-    // 키/몸무게 스케일
-    let hScale = a.heightScale != null ? toNum(a.heightScale) : heightCm / 175;
-    let wScale = a.weightScale != null ? toNum(a.weightScale) : weightKg / 70;
-
-    hScale = clamp(hScale, 0.85, 1.15);
-    wScale = clamp(wScale, 0.85, 1.30);
-
-    // 어깨/머리
-    const shoulderScale = clamp(toNum(a.shoulderScale) || 1.0, 0.9, 1.3);
-    const headScale = clamp(toNum(a.headScale) || 1.0, 0.85, 1.2);
-
-    // 체형에 따른 두께
-    let bodyThickness = 1.0;
-    switch (body) {
-      case 'slim':  bodyThickness = 0.9;  break;
-      case 'plus':  bodyThickness = 1.15; break;
-      default:      bodyThickness = 1.0;
+    const url = base.dataset.avatarUrl;
+    if (!url) {
+      console.warn('[avatarBase] data-avatar-url 없음');
+      return;
     }
 
-    const bodyHeight = hScale;
-    const legHeight = clamp(0.9 + (hScale - 1) * 1.2, 0.8, 1.3);
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error('avatar.json 불러오기 실패');
 
-    // ---- ② 피부색 + 밝기 ----
-    const baseRgb = hexToRgb(skinHex);
-    const brightSkin = toHex({
-      r: Math.round(baseRgb.r * toneBrightness),
-      g: Math.round(baseRgb.g * toneBrightness),
-      b: Math.round(baseRgb.b * toneBrightness),
-    });
+      const a = await res.json();
+      console.log('[avatarBase] avatar.json:', a);
 
-    // CSS 변수 세팅
-    if (stage) {
-      stage.style.setProperty('--skin', brightSkin);
-      stage.style.setProperty('--heightScale', hScale.toFixed(2));
-      stage.style.setProperty('--weightScale', wScale.toFixed(2));
-      stage.style.setProperty('--bodyThickness', bodyThickness.toFixed(2));
-      stage.style.setProperty('--bodyHeight', bodyHeight.toFixed(2));
-      stage.style.setProperty('--legHeight', legHeight.toFixed(2));
-      stage.style.setProperty('--shoulderScale', shoulderScale.toFixed(2));
-      stage.style.setProperty('--headScale', headScale.toFixed(2));
-      stage.style.setProperty('--toneBrightness', toneBrightness.toFixed(2));
+      const heightCm = toNum(a.heightCm) || 175;
+      const weightKg = toNum(a.weightKg) || 70;
+      const body = String(a.bodyShape || 'regular').toLowerCase();
+      const toneBrightness = clamp(
+        toNum(a.toneBrightness) || 1.0,
+        0.85,
+        1.15
+      );
+      const skinHex = a.skinToneHex || a.skinTone || '#e6cbb3';
 
-      stage.dataset.bodyShape = body;
-      stage.dataset.heightCm = String(heightCm);
-      stage.dataset.weightKg = String(weightKg);
+      let hScale =
+        a.heightScale != null ? toNum(a.heightScale) : heightCm / 175;
+      let wScale =
+        a.weightScale != null ? toNum(a.weightScale) : weightKg / 70;
+
+      hScale = clamp(hScale, 0.85, 1.15);
+      wScale = clamp(wScale, 0.85, 1.3);
+
+      const shoulderScale = clamp(toNum(a.shoulderScale) || 1.0, 0.9, 1.3);
+      const headScale     = clamp(toNum(a.headScale) || 1.0, 0.85, 1.2);
+
+      let bodyThickness = 1.0;
+      switch (body) {
+        case 'slim':
+          bodyThickness = 0.9;
+          break;
+        case 'plus':
+          bodyThickness = 1.15;
+          break;
+        default:
+          bodyThickness = 1.0;
+      }
+
+      const bodyHeight = hScale;
+      const legHeight = clamp(0.9 + (hScale - 1) * 1.2, 0.8, 1.3);
+
+      const baseRgb = hexToRgb(skinHex);
+      const brightSkin = toHex({
+        r: Math.round(baseRgb.r * toneBrightness),
+        g: Math.round(baseRgb.g * toneBrightness),
+        b: Math.round(baseRgb.b * toneBrightness),
+      });
+
+      if (stage) {
+        stage.style.setProperty('--skin', brightSkin);
+        stage.style.setProperty('--heightScale', hScale.toFixed(2));
+        stage.style.setProperty('--weightScale', wScale.toFixed(2));
+        stage.style.setProperty('--bodyThickness', bodyThickness.toFixed(2));
+        stage.style.setProperty('--bodyHeight', bodyHeight.toFixed(2));
+        stage.style.setProperty('--legHeight', legHeight.toFixed(2));
+        stage.style.setProperty('--shoulderScale', shoulderScale.toFixed(2));
+        stage.style.setProperty('--headScale', headScale.toFixed(2));
+        stage.style.setProperty('--toneBrightness', toneBrightness.toFixed(2));
+
+        stage.dataset.bodyShape = body;
+        stage.dataset.heightCm = String(heightCm);
+        stage.dataset.weightKg = String(weightKg);
+      }
+
+      if (inner) {
+        inner.style.setProperty('--heightScale', hScale.toFixed(2));
+        inner.style.setProperty('--weightScale', wScale.toFixed(2));
+      }
+
+      const svg = document.getElementById('avatar-svg');
+      if (svg) {
+        svg.querySelectorAll('.avatar-skin').forEach((el) => {
+          el.style.fill = brightSkin;
+        });
+
+        const head      = svg.querySelector('#head');
+        const torso     = svg.querySelector('#torso');
+        const shoulders = svg.querySelector('#shoulders');
+        const armL      = svg.querySelector('#armL');
+        const armR      = svg.querySelector('#armR');
+        const legL      = svg.querySelector('#legL');
+        const legR      = svg.querySelector('#legR');
+
+        let torsoRx = 60,
+          torsoRy = 95,
+          legRx = 28,
+          legRy = 95,
+          armRx = 22,
+          armRy = 60;
+        let shoulderW = 150;
+
+        switch (body) {
+          case 'slim':
+            torsoRx = 54;
+            legRx = 24;
+            armRx = 19;
+            shoulderW = 140;
+            break;
+          case 'regular':
+            torsoRx = 60;
+            legRx = 28;
+            armRx = 22;
+            shoulderW = 150;
+            break;
+          case 'plus':
+            torsoRx = 70;
+            legRx = 33;
+            armRx = 25;
+            shoulderW = 165;
+            break;
+        }
+
+        if (head) head.setAttribute('r', String(45 * headScale));
+
+        if (torso) {
+          torso.setAttribute('rx', String(torsoRx * wScale));
+          torso.setAttribute('ry', String(torsoRy * hScale));
+        }
+
+        if (shoulders) {
+          shoulders.setAttribute(
+            'x',
+            String(-(shoulderW * shoulderScale) / 2)
+          );
+          shoulders.setAttribute(
+            'width',
+            String(shoulderW * shoulderScale)
+          );
+        }
+
+        if (armL) armL.setAttribute('rx', String(armRx * wScale));
+        if (armR) armR.setAttribute('rx', String(armRx * wScale));
+        if (legL) legL.setAttribute('rx', String(legRx * wScale));
+        if (legR) legR.setAttribute('rx', String(legRx * wScale));
+      }
+
+      if (stage) {
+        applyClothesLayoutForAvatar(stage);
+      }
+    } catch (e) {
+      console.warn('[avatarBase] 초기화 실패:', e);
     }
-
-    if (inner) {
-      inner.style.setProperty('--heightScale', hScale.toFixed(2));
-      inner.style.setProperty('--weightScale', wScale.toFixed(2));
-    }
-
-    // ---- ③ SVG 파츠도 직접 조정 (편집 화면 느낌) ----
-const svg = document.getElementById('avatar-svg');
-if (svg) {
-  // 1) 피부색: .avatar-skin 모두에 스타일로 직접 적용
-  svg.querySelectorAll('.avatar-skin').forEach((el) => {
-    el.style.fill = brightSkin;   // 🔥 이 줄이 핵심
-  });
-
-  // 2) 나머지 체형 관련 파츠 조정
-  const head = svg.querySelector('#head');
-  const torso = svg.querySelector('#torso');
-  const shoulders = svg.querySelector('#shoulders');
-  const armL = svg.querySelector('#armL');
-  const armR = svg.querySelector('#armR');
-  const legL = svg.querySelector('#legL');
-  const legR = svg.querySelector('#legR');
-
-  // 기본 값
-  let torsoRx = 60, torsoRy = 95, legRx = 28, legRy = 95, armRx = 22, armRy = 60;
-  let shoulderW = 150;
-  switch (body) {
-    case 'slim':
-      torsoRx = 54; legRx = 24; armRx = 19; shoulderW = 140;
-      break;
-    case 'regular':
-      torsoRx = 60; legRx = 28; armRx = 22; shoulderW = 150;
-      break;
-    case 'plus':
-      torsoRx = 70; legRx = 33; armRx = 25; shoulderW = 165;
-      break;
   }
 
-  // 머리 크기
-  if (head) head.setAttribute('r', String(45 * headScale));
-
-  // 몸통
-  if (torso) {
-    torso.setAttribute('rx', String(torsoRx * wScale));
-    torso.setAttribute('ry', String(torsoRy * hScale));
-  }
-
-  // 어깨
-  if (shoulders) {
-    shoulders.setAttribute('x', String(-(shoulderW * shoulderScale) / 2));
-    shoulders.setAttribute('width', String(shoulderW * shoulderScale));
-  }
-
-  // 팔/다리 두께
-  if (armL) armL.setAttribute('rx', String(armRx * wScale));
-  if (armR) armR.setAttribute('rx', String(armRx * wScale));
-  if (legL) legL.setAttribute('rx', String(legRx * wScale));
-  if (legR) legR.setAttribute('rx', String(legRx * wScale));
-}
-
-
-    // 옷 레이아웃 튜닝 훅
-    if (stage) {
-      applyClothesLayoutForAvatar(stage);
-    }
-  } catch (e) {
-    console.warn('[avatarBase] 적용 실패:', e);
-  }
-}
-
-
-  // ===== 랜덤 (DB 기준) =====
+  // ===== 전체 랜덤 추천 (DB) - 현재 버튼에서 비활성화 알림만 사용 중 =====
   async function randomGlobal() {
     try {
       const r = await fetch(API.random, { method: 'GET', cache: 'no-store' });
-      if (!r.ok) throw new Error('랜덤 요청 실패');
+      if (!r.ok) throw new Error('랜덤 추천 불러오기 실패');
       const it = await r.json();
       if (!it) {
-        alert('내부 DB에 등록된 옷이 없습니다.');
+        alert('현재 DB에 저장된 코디 아이템이 없습니다.');
         return;
       }
       it.imageUrl = safeImg(it.imageUrl);
@@ -652,9 +725,11 @@ if (svg) {
     }
   }
 
+  // ===== 카테고리별 랜덤 추천 (DB) - 현재 버튼에서 비활성화 알림만 사용 중 =====
   async function randomByCategory() {
     const cat = byId('filter-category')?.value?.trim();
-    if (!cat) return alert('먼저 카테고리를 선택하세요.');
+    if (!cat) return alert('먼저 카테고리를 선택해주세요.');
+
     try {
       const u = new URL(API.filterAdvanced, location.origin);
       u.searchParams.set('category', cat);
@@ -663,7 +738,7 @@ if (svg) {
       const items = await r.json();
       if (!Array.isArray(items) || items.length === 0) {
         return alert(
-          '내부 DB에 해당 카테고리 아이템이 없습니다.(네이버 검색은 필터 버튼을 눌러 주세요)'
+          '해당 카테고리에는 DB에 저장된 아이템이 없습니다.\n필터를 조정하거나 다시 시도해 주세요.'
         );
       }
       const pick = items[Math.floor(Math.random() * items.length)] || {};
@@ -672,45 +747,78 @@ if (svg) {
       equip(pick);
     } catch (e) {
       console.error(e);
-      alert('카테고리 랜덤 중 오류가 발생했습니다.');
+      alert('카테고리 랜덤 추천 중 오류가 발생했습니다.');
     }
   }
 
-  // 선택한 카테고리만 비우기 (상의/하의/아우터/신발/악세만)
-function clearCurrentCategory() {
-  const cat = byId('filter-category')?.value?.trim();
-  if (!cat) return alert('비울 카테고리를 선택하세요.');
+  // ===== 카테고리/전체 지우기 =====
+  function clearCurrentCategory() {
+    const cat = byId('filter-category')?.value?.trim();
+    if (!cat) return alert('지울 카테고리를 먼저 선택해주세요.');
 
-  const valid = ['top', 'bottom', 'outer', 'shoes', 'accessory'];
-  if (!valid.includes(cat)) return;
+    const valid = ['top', 'bottom', 'outer', 'shoes', 'accessory'];
+    if (!valid.includes(cat)) return;
 
-  const layer = layers[cat];
-  if (layer) {
-    layer.removeAttribute('src');  // src 아예 제거
-    layer.alt = '';
+    const layer = layers[cat];
+    if (layer) {
+      layer.removeAttribute('src');
+      layer.alt = '';
+    }
   }
-}
 
-// 전체 옷만 초기화 (얼굴/아바타는 유지)
-function clearAll() {
-  ['top', 'bottom', 'outer', 'shoes', 'accessory'].forEach((key) => {
-    const l = layers[key];
-    if (!l) return;
-    l.removeAttribute('src');
-    l.alt = '';
-  });
-}
+  function clearAll() {
+    ['top', 'bottom', 'outer', 'shoes', 'accessory'].forEach((key) => {
+      const l = layers[key];
+      if (!l) return;
+      l.removeAttribute('src');
+      l.alt = '';
+    });
+  }
 
+  function setHeadVisible(visible) {
+    const svgHead = document.getElementById('head-group');
+    const baseHead = document.getElementById('head');
+    const opacity = visible ? '1' : '0';
+    if (svgHead) svgHead.style.opacity = opacity;
+    if (baseHead) baseHead.style.opacity = opacity;
+  }
 
-  // ===== 필터 폼 값 수집 =====
+  // ===== 얼굴 업로드/제거 =====
+  function handleFaceUpload(file) {
+    if (!file || !layers.face) return;
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (file.size > maxSize) {
+      alert('이미지 용량이 2MB를 초과합니다.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      layers.face.src = reader.result;
+      layers.face.alt = '사용자 얼굴';
+      setHeadVisible(false); // 기본 아바타 얼굴 숨기기
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearFace() {
+    if (layers.face) {
+      layers.face.removeAttribute('src');
+      layers.face.alt = '';
+    }
+    const input = byId('face-upload');
+    if (input) input.value = '';
+    setHeadVisible(true); // 기본 아바타 얼굴 다시 보이기
+  }
+
+  // ===== 필터 파라미터 수집 =====
   function collectFilterParams() {
     const obj = {};
     const get = (id) => byId(id)?.value?.trim();
-    const cat = get('filter-category');
-    const sub = get('filter-subcategory'); // 🔥 서브카테고리
-    const color = get('filter-color');
-    const brand = get('filter-brand');
-    const gender = get('filter-gender');
+    const cat     = get('filter-category');
+    const sub     = get('filter-subcategory');
+    const color   = get('filter-color');
+    const brand   = get('filter-brand');
+    const gender  = get('filter-gender');
     const maxPriceRaw = get('filter-price');
 
     if (cat) obj.category = cat;
@@ -724,7 +832,7 @@ function clearAll() {
     return obj;
   }
 
-  // 서브카테 value → 한글 라벨 얻기
+  // 서브카테고리 value → 라벨 텍스트
   function subcategoryLabel(value) {
     if (!value) return '';
     const sel = byId('filter-subcategory');
@@ -732,18 +840,16 @@ function clearAll() {
     return opt?.textContent?.trim() || '';
   }
 
-  // 한글 네이버 검색 쿼리 만들기
+  // 네이버 이미지 검색용 query 조합 (사람 신체 텍스트 필터는 후처리에서 처리)
+  // primary: 자연스러운 키워드 조합, fallback: 더 단순한 쿼리
   function buildNaverQuery(params) {
     const parts = [];
     const catKo = CATEGORY_LABEL_KO[params.category || 'top'];
 
-    if (params.gender === 'male') parts.push('남성');
-    if (params.gender === 'female') parts.push('여성');
-    if (params.gender === 'unisex') parts.push('공용');
+    // 검색어 우선순위: 브랜드 > 색상 > 서브카테고리 > 메인카테고리 > 성별
+    if (params.brand) parts.push(params.brand);
+    if (params.color) parts.push(params.color);
 
-    if (catKo) parts.push(catKo);
-
-    // 🔥 세부 카테고리 키워드 우선 사용
     if (params.subCategory) {
       const subKey = SUBCATEGORY_QUERY_KEYWORD[params.subCategory];
       if (subKey) {
@@ -754,30 +860,36 @@ function clearAll() {
       }
     }
 
-    if (params.color) parts.push(params.color);
-    if (params.brand) parts.push(params.brand);
+    if (catKo) parts.push(catKo);
 
-    return parts.join(' ').trim();
+    if (params.gender === 'male')   parts.push('남성');
+    if (params.gender === 'female') parts.push('여성');
+    if (params.gender === 'unisex') parts.push('공용');
+
+    const base = parts.join(' ').trim();
+    const primary = base || '의류';
+    const fallback = base || '옷';
+    return { primary, fallback };
   }
 
-  // ===== 내부 DB + 네이버 이미지 검색 후 렌더 =====
+  // ===== 필터 적용 (DB + 네이버 이미지) =====
   async function applyFilters() {
-    const params = collectFilterParams();
+    const params   = collectFilterParams();
     const category = params.category || 'top';
 
-    const wrapper = byId('itemListWrapper');
-    const emptyEl = byId('itemListEmpty');
+    const wrapper    = byId('itemListWrapper');
+    const emptyEl    = byId('itemListEmpty');
     const targetList = byId(`itemList-${category}`);
 
     if (targetList) {
       targetList.innerHTML =
-        '<div class="col-span-full text-center text-gray-500 py-8">아이템을 불러오는 중입니다...</div>';
+        '<div class="col-span-full text-center text-gray-500 py-8">코디 아이템을 불러오는 중입니다...</div>';
       targetList.classList.remove('hidden');
     }
     if (emptyEl) emptyEl.classList.add('hidden');
 
     try {
-      // 1) 내부 DB 필터
+      // 1) DB 필터
       const dbPromise = API.filterAdvanced
         ? (async () => {
             const u = new URL(API.filterAdvanced, location.origin);
@@ -787,36 +899,53 @@ function clearAll() {
               }
             });
             console.log('[FittingRoom] DB 필터 요청:', u.toString());
-            const r = await fetch(u.toString(), { method: 'GET', cache: 'no-store' });
-            console.log('[FittingRoom] DB 필터 응답 status:', r.status);
+            const r = await fetch(u.toString(), {
+              method: 'GET',
+              cache: 'no-store',
+            });
+            console.log('[FittingRoom] DB 응답 status:', r.status);
             return r.ok ? r.json() : [];
           })()
         : Promise.resolve([]);
 
-      // 2) 네이버 이미지 검색
-      const q = buildNaverQuery(params);
+      // 2) 네이버 이미지 검색 (0개일 때는 fallback 쿼리 재시도)
+      const { primary: qPrimary, fallback: qFallback } = buildNaverQuery(params);
       const navPromise =
-        API.searchImages && q
+        API.searchImages && qPrimary
           ? (async () => {
-              const uImg = new URL(API.searchImages, location.origin);
-              uImg.searchParams.set('query', q);
-              uImg.searchParams.set('display', '24');
-              console.log('[FittingRoom] 네이버 검색 요청:', q, '=>', uImg.toString());
-              const r = await fetch(uImg.toString(), {
-                method: 'GET',
-                cache: 'no-store',
-              });
-              console.log('[FittingRoom] 네이버 응답 status:', r.status);
-              return r.ok ? r.json() : [];
+              const fetchNaver = async (q) => {
+                const uImg = new URL(API.searchImages, location.origin);
+                uImg.searchParams.set('query', q);
+                uImg.searchParams.set('display', '80');
+                console.log('[FittingRoom] 이미지 검색 요청:', q, '=>', uImg.toString());
+                const r = await fetch(uImg.toString(), {
+                  method: 'GET',
+                  cache: 'no-store',
+                });
+                console.log('[FittingRoom] 이미지 검색 응답 status:', r.status);
+                return r.ok ? r.json() : [];
+              };
+
+              let result = await fetchNaver(qPrimary);
+              // 0개일 때 fallback으로 한 번 더 시도
+              const arr = Array.isArray(result)
+                ? result
+                : Array.isArray(result.items)
+                ? result.items
+                : Array.isArray(result.result)
+                ? result.result
+                : [];
+              if (arr.length === 0 && qFallback) {
+                result = await fetchNaver(qFallback);
+              }
+              return result;
             })()
           : Promise.resolve([]);
 
       const [dbRaw, navRaw] = await Promise.all([dbPromise, navPromise]);
 
-      // 1) 내부 DB 결과
       const dbItems = Array.isArray(dbRaw) ? dbRaw : [];
 
-      // 2) 네이버 결과: 배열이든 {items:[..]}든 대응
       let navArray = [];
       if (Array.isArray(navRaw)) {
         navArray = navRaw;
@@ -837,14 +966,20 @@ function clearAll() {
           price: it.price,
           imageUrl: it.imageUrl,
           thumbUrl: it.thumbUrl || it.imageUrl,
-          croppedImage: null, // DB에는 크롭 없음
+          croppedImage: null,
           source: 'DB',
         }));
 
+      const badWords = [
+        '모델', '착용', '착샷', '착장', '룩북', '패션쇼',
+        '얼굴', '사람',
+        'face', 'people', 'person', 'human', 'body'
+      ];
       const mappedNaverItems = navArray
         .filter((it) => it)
         .map((it) => {
-          const imageUrl = it.imageUrl || it.link || it.thumbnail || it.thumbnailUrl;
+          const imageUrl =
+            it.imageUrl || it.link || it.thumbnail || it.thumbnailUrl;
           const titleRaw = it.title || it.name || '';
           const title = titleRaw.replace(/<[^>]+>/g, '');
           const croppedImage = it.croppedImage || null;
@@ -857,22 +992,33 @@ function clearAll() {
             color: params.color || it.color || '',
             price: it.price != null ? it.price : null,
             imageUrl,
-            thumbUrl: it.thumbUrl || it.thumbnail || it.thumbnailUrl || imageUrl,
+            thumbUrl:
+              it.thumbUrl || it.thumbnail || it.thumbnailUrl || imageUrl,
             croppedImage,
             source: 'NAVER',
           };
         })
-        .filter((it) => it.imageUrl);
+        .filter((it) => it.imageUrl)
+        .filter((it) => {
+          const text = (it.name || '').toLowerCase();
+          return !badWords.some((w) => text.includes(w));
+        });
+
+      // 필터 후 0개라면 필터를 완화해(부정어 무시) 원본 그대로 사용
+      const finalNavItems = mappedNaverItems.length > 0 ? mappedNaverItems : navArray;
 
       console.log(
         '[FittingRoom] 필터 결과 - DB:',
         mappedDbItems.length,
-        '네이버:',
-        mappedNaverItems.length
+        '개, 네이버(필터 후):',
+        mappedNaverItems.length,
+        '개, 네이버(최종):',
+        finalNavItems.length,
+        '개'
       );
 
-      const allItems = [...mappedDbItems, ...mappedNaverItems];
-      renderGrid(allItems, category);
+      const allItems = [...mappedDbItems, ...finalNavItems];
+      renderGrid(allItems, category, 1, PAGE_SIZE);
 
       updateCurrentCategory(category);
       switchTab(category);
@@ -889,17 +1035,17 @@ function clearAll() {
     byId('filter-category').value = 'top';
     const subSel = byId('filter-subcategory');
     if (subSel) subSel.selectedIndex = 0;
-    byId('filter-color').value = '';
-    byId('filter-brand').value = '';
+    byId('filter-color').value  = '';
+    byId('filter-brand').value  = '';
     byId('filter-gender').value = '';
-    byId('filter-price').value = '';
+    byId('filter-price').value  = '';
     updateCurrentCategory('top');
     updateSubcategoryOptions('top');
     switchTab('top');
   }
 
-  // ===== 아이템 그리드 렌더 (itemList-카테고리 기준) =====
-  function renderGrid(items, category) {
+  // ===== 그리드 렌더링 (페이징) =====
+  function renderGrid(items, category, page = 1, pageSize = PAGE_SIZE) {
     const wrapper = byId('itemListWrapper');
     if (!wrapper) return;
 
@@ -909,14 +1055,26 @@ function clearAll() {
       list.classList.add('hidden');
       list.innerHTML = '';
     });
-    const valid = (Array.isArray(items) ? items : []).filter((it) => !!it.imageUrl);
+
+    const valid = (Array.isArray(items) ? items : []).filter(
+      (it) => !!it.imageUrl
+    );
+    // 캐시 저장 & 페이지 상태
+    listCache[category] = valid;
+    const total = valid.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const safePage = Math.min(Math.max(page, 1), totalPages);
+    pageState[category] = safePage;
+    const startIdx = (safePage - 1) * pageSize;
+    const endIdx = startIdx + pageSize;
+    const pageItems = valid.slice(startIdx, endIdx);
 
     const targetId = `itemList-${category}`;
     let target = byId(targetId) || lists[0];
 
     if (!target) return;
 
-    if (valid.length === 0) {
+    if (total === 0) {
       target.classList.remove('hidden');
       if (emptyEl) emptyEl.classList.remove('hidden');
       const countEl = byId('itemCount');
@@ -926,21 +1084,21 @@ function clearAll() {
 
     if (emptyEl) emptyEl.classList.add('hidden');
 
-    valid.forEach((c) => {
+    pageItems.forEach((c) => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.setAttribute('data-role', 'item-card');
       btn.className =
         'item-card flex flex-col items-center gap-1 border rounded-lg p-1 text-[10px] hover:border-gray-900 transition';
 
-      btn.dataset.id = c.id != null ? String(c.id) : '';
-      btn.dataset.name = c.name || '';
-      btn.dataset.brand = c.brand || '';
+      btn.dataset.id       = c.id != null ? String(c.id) : '';
+      btn.dataset.name     = c.name || '';
+      btn.dataset.brand    = c.brand || '';
       btn.dataset.category = c.category || category;
-      btn.dataset.color = c.color || '';
-      btn.dataset.price = c.price != null ? String(c.price) : '0';
-      btn.dataset.image = c.imageUrl || '';
-      btn.dataset.thumb = c.thumbUrl || '';
+      btn.dataset.color    = c.color || '';
+      btn.dataset.price    = c.price != null ? String(c.price) : '0';
+      btn.dataset.image    = c.imageUrl || '';
+      btn.dataset.thumb    = c.thumbUrl || '';
       btn.dataset.croppedImage = c.croppedImage || '';
 
       const favKey = makeFavKeyFromItem(c, category);
@@ -958,7 +1116,12 @@ function clearAll() {
       img.className = 'w-full h-full object-contain';
       img.loading = 'lazy';
       img.onerror = () => {
-        img.src = BLANK;
+        if (!img.dataset.retried && c.imageUrl && c.imageUrl.startsWith('http')) {
+          img.dataset.retried = '1';
+          img.src = c.imageUrl; // proxy 실패 시 원본 재시도
+        } else {
+          img.src = BLANK;
+        }
       };
       imgWrap.appendChild(img);
 
@@ -982,7 +1145,7 @@ function clearAll() {
       priceEl.className = 'text-[10px] font-semibold text-gray-900';
       priceEl.textContent =
         c.price != null
-          ? `₩${Number(c.price || 0).toLocaleString()}`
+          ? `${Number(c.price || 0).toLocaleString()}`
           : c.source === 'NAVER'
           ? '네이버 이미지'
           : '';
@@ -992,7 +1155,7 @@ function clearAll() {
       heartEl.className = 'like-btn text-lg';
       if (isLiked) {
         heartEl.classList.add('liked');
-        heartEl.textContent = '❤';
+        heartEl.textContent = '♥';
       } else {
         heartEl.textContent = '♡';
       }
@@ -1002,7 +1165,8 @@ function clearAll() {
 
       const sourceEl = document.createElement('p');
       sourceEl.className = 'text-[9px] text-gray-400';
-      sourceEl.textContent = c.source === 'NAVER' ? '네이버' : '내부 DB';
+      sourceEl.textContent =
+        c.source === 'NAVER' ? '네이버 이미지' : '내 DB';
       textWrap.appendChild(sourceEl);
 
       btn.appendChild(imgWrap);
@@ -1013,16 +1177,53 @@ function clearAll() {
     target.classList.remove('hidden');
 
     const countEl = byId('itemCount');
-    if (countEl) countEl.textContent = `(${valid.length}개)`;
+    if (countEl) countEl.textContent = `(${total}개)`;
+
+    // 페이지네이션
+    const existingPager = target.querySelector('.pager');
+    if (existingPager) existingPager.remove();
+    if (totalPages > 1) {
+      const pager = document.createElement('div');
+      pager.className = 'pager col-span-full mt-3 flex flex-wrap gap-2 justify-center items-center text-xs';
+
+      const makeBtn = (label, disabled, cb) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = label;
+        b.disabled = disabled;
+        b.className =
+          'px-2 py-1 rounded border ' +
+          (disabled ? 'text-gray-400 border-gray-200 cursor-not-allowed' : 'text-gray-700 border-gray-300 hover:bg-gray-100');
+        if (!disabled) b.addEventListener('click', cb);
+        return b;
+      };
+
+      pager.appendChild(makeBtn('이전', safePage === 1, () => renderGrid(listCache[category], category, safePage - 1, pageSize)));
+
+      for (let p = 1; p <= totalPages; p++) {
+        const b = makeBtn(String(p), p === safePage, () => renderGrid(listCache[category], category, p, pageSize));
+        if (p === safePage) {
+          b.classList.remove('border-gray-300', 'text-gray-700');
+          b.classList.add('bg-gray-900', 'text-white', 'border-gray-900');
+        }
+        pager.appendChild(b);
+      }
+
+      pager.appendChild(makeBtn('다음', safePage === totalPages, () => renderGrid(listCache[category], category, safePage + 1, pageSize)));
+
+      target.appendChild(pager);
+    }
   }
 
-  // ===== 찜 목록 렌더 =====
+  // ===== 위시리스트 렌더링 =====
   function renderFavorites() {
     const wrapper = byId('wishlistWrapper');
     const emptyEl = byId('wishlistEmpty');
     if (!wrapper) return;
 
-    wrapper.querySelectorAll('[data-role="item-card"]').forEach((el) => el.remove());
+    wrapper
+      .querySelectorAll('[data-role="item-card"]')
+      .forEach((el) => el.remove());
 
     const arr = Array.from(favorites.entries());
     const size = arr.length;
@@ -1040,27 +1241,31 @@ function clearAll() {
       btn.className =
         'item-card flex flex-col items-center gap-1 border rounded-lg p-1 text-[10px] hover:border-gray-900 transition';
 
-      btn.dataset.favKey = key;
-      btn.dataset.category = item.category ||'';
-      btn.dataset.image = item.imageUrl || '';
-      btn.dataset.name = item.name || '';
-      btn.dataset.brand = item.brand || '';
-      btn.dataset.color = item.color || '';
-      btn.dataset.price = item.price != null ? String(item.price) : '0';
+      btn.dataset.favKey   = key;
+      btn.dataset.category = item.category || '';
+      btn.dataset.image    = item.imageUrl || '';
+      btn.dataset.name     = item.name || '';
+      btn.dataset.brand    = item.brand || '';
+      btn.dataset.color    = item.color || '';
+      btn.dataset.price    = item.price != null ? String(item.price) : '0';
 
       const imgWrap = document.createElement('div');
       imgWrap.className =
         'w-full aspect-[3/4] overflow-hidden rounded bg-gray-50 flex items-center justify-center';
 
       const img = document.createElement('img');
-
       img.referrerPolicy = 'no-referrer';
       img.src = safeImg(item.imageUrl);
       img.alt = item.name || '';
       img.className = 'w-full h-full object-contain';
       img.loading = 'lazy';
       img.onerror = () => {
-        img.src = BLANK;
+        if (!img.dataset.retried && item.imageUrl && item.imageUrl.startsWith('http')) {
+          img.dataset.retried = '1';
+          img.src = item.imageUrl;
+        } else {
+          img.src = BLANK;
+        }
       };
       imgWrap.appendChild(img);
 
@@ -1083,12 +1288,14 @@ function clearAll() {
       const priceEl = document.createElement('p');
       priceEl.className = 'text-[10px] font-semibold text-gray-900';
       priceEl.textContent =
-        item.price != null ? `₩${Number(item.price || 0).toLocaleString()}` : '';
+        item.price != null
+          ? `${Number(item.price || 0).toLocaleString()}`
+          : '';
       priceRow.appendChild(priceEl);
 
       const heartEl = document.createElement('span');
       heartEl.className = 'like-btn text-lg liked';
-      heartEl.textContent = '❤';
+      heartEl.textContent = '♥';
       priceRow.appendChild(heartEl);
 
       textWrap.appendChild(priceRow);
@@ -1100,47 +1307,46 @@ function clearAll() {
     });
   }
 
-
-// 현재 선택된 카테고리 가져오기
-function getCurrentCategory() {
-  return byId('filter-category')?.value || 'top';
-}
-
-// ----- 실제로 아바타에 옷 입히기 -----
-function equip(item) {
-  const category = (item.category || getCurrentCategory() || 'top').toLowerCase();
-  const layer = layers[category];
-  if (!layer) {
-    console.warn('[equip] 알 수 없는 카테고리:', category);
-    return;
+  // ===== 현재 카테고리 =====
+  function getCurrentCategory() {
+    return byId('filter-category')?.value || 'top';
   }
 
-  const url = safeImg(item.croppedImage || item.imageUrl || item.thumbUrl);
-  layer.src = url || BLANK;
-  layer.alt = item.name || '';
-}
+  // ===== 실제로 아바타에 옷 입히기 =====
+  function equip(item) {
+    const category = (item.category || getCurrentCategory() || 'top').toLowerCase();
+    const layer = layers[category];
+    if (!layer) {
+      console.warn('[equip] 존재하지 않는 카테고리:', category);
+      return;
+    }
 
-// 서버 렌더링 카드(내부 DB용)에서 바로 입히기 (배경제거 없이)
-function equipFromDataset(card) {
-  const d = card.dataset;
-  equip({
-    category: d.category,
-    name: d.name,
-    imageUrl: d.croppedImage || d.image || d.thumb || d.imageUrl,
-  });
-}
+    const url = safeImg(item.croppedImage || item.imageUrl || item.thumbUrl);
+    layer.src = url || BLANK;
+    layer.alt = item.name || '';
+  }
 
+  // dataset만 받아서 equip
+  function equipFromDataset(card) {
+    const d = card.dataset;
+    equip({
+      category: d.category,
+      name: d.name,
+      imageUrl: d.croppedImage || d.image || d.thumb || d.imageUrl,
+    });
+  }
 
-  // ===== 저장 =====
+  // ===== 코디 세트 저장 (DB) =====
   async function saveSet() {
     const name = byId('set-name')?.value?.trim() || '';
     const payload = {
       name,
-      topImage: layers.top?.src || null,
-      bottomImage: layers.bottom?.src || null,
-      outerImage: layers.outer?.src || null,
-      shoesImage: layers.shoes?.src || null,
+      topImage:       layers.top?.src || null,
+      bottomImage:    layers.bottom?.src || null,
+      outerImage:     layers.outer?.src || null,
+      shoesImage:     layers.shoes?.src || null,
       accessoryImage: layers.accessory?.src || null,
+      faceImage:      layers.face?.src || null,
     };
 
     try {
@@ -1162,14 +1368,15 @@ function equipFromDataset(card) {
       }
 
       const text = await res.text();
-      alert(text || '저장 실패');
+      console.error('[saveSet] 실패', res.status, text);
+      alert(text || '저장 중 오류가 발생했습니다.');
     } catch (e) {
-      console.error(e);
-      alert('저장 중 오류가 발생했습니다.');
+      console.error('[saveSet] 예외', e);
+      alert('코디 저장 중 오류가 발생했습니다. (콘솔 로그 확인)');
     }
   }
 
-  // ===== 다운로드 (외부 이미지 대응/CORS) =====
+  // ===== 아바타 이미지 다운로드 (html2canvas) =====
   async function downloadImage() {
     const stage = $('.avatar-stage');
     if (!stage) return;
@@ -1192,7 +1399,9 @@ function equipFromDataset(card) {
       a.click();
     } catch (e) {
       console.error(e);
-      alert('이미지 저장 중 오류가 발생했습니다. 외부 이미지의 CORS 제한일 수 있어요.');
+      alert(
+        '이미지 다운로드 중 오류가 발생했습니다.\n일부 외부 이미지의 CORS 설정을 확인해주세요.'
+      );
     }
   }
 

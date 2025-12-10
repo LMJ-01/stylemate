@@ -139,12 +139,12 @@
 </section>
 
 <!-- ✅ 댓글 모달 -->
-<div id="commentModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+<div id="commentModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
   <div id="modal-wrapper"
        th:attr="data-user-id=${loginUserId}"
-       class="bg-white rounded-xl w-[90%] max-w-4xl shadow-lg overflow-auto max-h-[90vh] relative">
-    <button onclick="closeCommentModal()" class="absolute top-2 right-2 text-gray-500 hover:text-black">✕</button>
-    <div id="commentModalContent" class="p-6"></div>
+       class="bg-white rounded-2xl w-[95%] max-w-6xl shadow-2xl overflow-auto max-h-[95vh] relative">
+    <button onclick="closeCommentModal()" class="absolute top-3 right-3 text-gray-500 hover:text-black text-xl">✕</button>
+    <div id="commentModalContent" class="p-6 md:p-8"></div>
   </div>
 </div>
 

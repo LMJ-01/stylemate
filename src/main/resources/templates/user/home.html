@@ -35,9 +35,7 @@
 
   <!-- ✅ 환영 문구 -->
   <h1 class="text-3xl font-bold mb-6 text-gray-800"
-      th:text="${displayName != null && displayName != ''} ?
-               '환영합니다, ' + displayName + ' 님!' :
-               '환영합니다! 게스트 모드입니다.'">
+      th:text="${!#strings.isEmpty(nickname) ? '환영합니다, ' + nickname + ' 님!' : (!#strings.isEmpty(displayName) ? '환영합니다, ' + displayName + ' 님!' : '환영합니다! 게스트 모드입니다.') }">
     환영합니다!
   </h1>
 

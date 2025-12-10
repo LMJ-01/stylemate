@@ -12,7 +12,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <!-- 앱 JS -->
-  <script th:src="@{/js/fittingroom.js?v=20251129}" defer></script>
+  <!-- 캐시 무효화를 위해 버전 갱신 -->
+  <script th:src="@{/js/fittingroom.js?v=20251210}" defer></script>
 
   <title>StyleMate - FittingRoom</title>
 
@@ -28,12 +29,12 @@
     border-radius: 1rem;
     overflow: hidden;
 
-    /* 아바타/옷 공용 변수 (JS에서 덮어씀) */
+    /* 아바타/피팅 공용 변수 (JS에서 세팅) */
     --skin: #f2d3b1;
     --heightScale: 1;
     --weightScale: 1;
 
-    /* 🔥 아바타 파트별 스케일 기본값 (JS에서 avatar.json으로 세팅) */
+    /* 기본 아바타 디테일(키/몸무게/체형 - JS에서 avatar.json으로 세팅) */
     --bodyThickness: 1;
     --bodyHeight: 1;
     --legHeight: 1;
@@ -41,7 +42,7 @@
     --headScale: 1;
     --toneBrightness: 1;
 
-    /* 옷 레이어용 */
+    /* 옷 레이아웃용 */
     --topScale: 1;
     --bottomScale: 1;
     --outerScale: 1;
@@ -58,13 +59,13 @@
     position: absolute;
     inset: 0;
 
-    /* 🔥 키/체형에 따라 전체 스케일 */
+    /* 전체 체형에 따라 전체 스케일 조정 */
     transform-origin: bottom center;
     transform: scaleX(var(--weightScale, 1))
                scaleY(var(--heightScale, 1));
   }
 
-  /* 아바타 몸체 전체 공통 */
+  /* 아바타 몸체 컨테이너 공통 */
   .avatar-base {
     position: absolute;
     inset: 0;
@@ -81,7 +82,7 @@
   .avatar-skin { fill: var(--skin); }
   .avatar-line { fill: rgba(0,0,0,.08); }
 
-  /* ===== 🔥 아바타 파트별 스케일링 ===== */
+  /* ===== 세부 아바타 파츠 스케일링 ===== */
   .avatar-head,
   .avatar-body,
   .avatar-arm,
@@ -107,61 +108,91 @@
     transform: scale(var(--headScale, 1));
   }
 
-  /* 다리 : 키에 따라 살짝 길이 변화 */
+  /* 다리 : 하체 길이 */
   .avatar-leg {
     transform: scaleY(var(--legHeight, 1));
   }
 
-  /* 공통 레이어 (옷, 얼굴 등) */
-  .layer {
+  /* 공통 슬롯 */
+  .slot {
     position: absolute;
     left: 50%;
-    object-fit: contain;
+    transform: translate(-50%, -50%);
     pointer-events: none;
   }
 
-  /* 레이어 순서 */
-  .layer-face      { z-index: 6; }
-  .layer-bottom    { z-index: 10; }
-  .layer-top       { z-index: 12; }
-  .layer-shoes     { z-index: 14; }
-  .layer-outer     { z-index: 20; }
-  .layer-accessory { z-index: 30; }
+  .slot img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: contain;
+    font-size: 0;
+  }
+
+  /* src 없는 슬롯 이미지는 안 보이게 */
+  .slot img:not([src]),
+  .slot img[src=""] {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* 얼굴 슬롯 위치/크기 */
+  .slot-face {
+    top: 14%;
+    width: 26%;
+    height: 26%;
+    transform: translate(-50%, -50%);
+    overflow: hidden;
+    border-radius: 50%;
+  }
+  .slot-face img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* 슬롯 z-index 순서 */
+  .slot-face      { z-index: 6; }
+  .slot-bottom    { z-index: 10; }
+  .slot-top       { z-index: 12; }
+  .slot-shoes     { z-index: 14; }
+  .slot-outer     { z-index: 20; }
+  .slot-accessory { z-index: 30; }
 
   /* ===== 카테고리별 위치/크기 ===== */
-  #layer-top {
-    top: calc(34% + var(--topOffsetY));
-    width: 55%;
+  .slot-top {
+    top: var(--topY, 42%);
+    width: var(--topWidth, 60%);
     transform: translate(-50%, -50%) scale(var(--topScale));
   }
 
-  #layer-outer {
-    top: calc(32% + var(--outerOffsetY));
-    width: 60%;
+  .slot-outer {
+    top: var(--outerY, 42%);
+    width: var(--outerWidth, 65%);
     transform: translate(-50%, -50%) scale(var(--outerScale));
   }
 
-  #layer-bottom {
-    top: calc(56% + var(--bottomOffsetY));
-    width: 45%;
+  .slot-bottom {
+    top: var(--bottomY, 64%);
+    width: var(--bottomWidth, 55%);
     transform: translate(-50%, -50%) scale(var(--bottomScale));
   }
 
-  #layer-shoes {
-    top: calc(82% + var(--shoesOffsetY));
-    width: 35%;
+  .slot-shoes {
+    top: var(--shoesY, 90%);
+    width: var(--shoesWidth, 45%);
     transform: translate(-50%, -50%) scale(var(--shoesScale));
   }
 
-  #layer-accessory {
-    top: 28%;
-    width: 30%;
+  .slot-accessory {
+    top: var(--accessoryY, 30%);
+    width: var(--accessoryWidth, 30%);
     transform: translate(-50%, -50%) scale(1);
   }
 
   .grid-scroll { max-height: 520px; overflow: auto }
 
-  /* ❤️ 찜 하트 버튼 */
+  /* 하트(찜) 버튼 */
   .like-btn {
     font-size: 18px;
     cursor: pointer;
@@ -178,7 +209,7 @@
     box-shadow: 0 6px 16px rgba(0,0,0,0.08);
   }
 
-  /* src 없는 레이어는 숨기기 */
+  /* src 없는 레이어는 안 보이게 */
   .avatar-stage img.layer:not([src]),
   .avatar-stage img.layer[src=""] {
     opacity: 0;
@@ -191,11 +222,17 @@
 <body class="min-h-screen bg-gray-100">
 <header class="bg-white border-b">
   <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-    <h1 class="text-xl md:text-2xl font-bold">🧍‍♂️ StyleMate FittingRoom</h1>
+    <h1 class="text-xl md:text-2xl font-bold">👕 StyleMate FittingRoom</h1>
     <div class="flex items-center gap-3 text-sm">
+      <a th:href="@{'/user/profile/' + ${user.id}}"
+         class="px-3 py-1 rounded-lg bg-white border hover:bg-gray-50">
+        프로필로 돌아가기
+      </a>
       <a th:href="@{'/user/profile/' + ${user.id} + '/avatar/edit'}"
-         class="px-3 py-1 rounded-lg bg-white border hover:bg-gray-50">아바타 설정</a>
-      <span class="text-gray-500">옷을 입히고 벗겨보세요!</span>
+         class="px-3 py-1 rounded-lg bg-white border hover:bg-gray-50">
+        아바타 설정
+      </a>
+      <span class="text-gray-500">옷을 입히고 벗겨 보세요!</span>
     </div>
   </div>
 </header>
@@ -205,18 +242,18 @@
   <!-- 왼쪽: 아바타 영역 -->
   <section class="md:col-span-1 space-y-4">
     <div class="avatar-stage shadow bg-white relative" role="region" aria-label="아바타 미리보기">
-      <!-- 🔥 아바타+옷 전체를 스케일하는 래퍼 -->
+      <!-- 실제 아바타 + 옷 레이어를 담는 래퍼 -->
       <div class="avatar-inner">
-        <!-- ✅ 아바타 기본(몸 + 키/체형 스케일) -->
+        <!-- 기본 아바타(키/몸무게/체형 반영) -->
         <div id="avatarBase"
              class="avatar-base"
              th:data-avatar-url="@{'/user/profile/' + ${user.id} + '/avatar.json'}">
-          <!-- 🔥 avatar_edit.html과 같은 구조의 SVG -->
+          <!-- avatar_edit.html과 동일한 구조의 SVG -->
           <svg id="avatar-svg" viewBox="0 0 300 500" aria-hidden="true">
             <!-- 배경 -->
             <rect x="0" y="0" width="300" height="500" fill="#f7f7f7" rx="20"></rect>
 
-            <!-- 몸 (체형/키/몸무게 스케일 반영될 부분) -->
+            <!-- 몸(체형/키/몸무게 반영되는 부분) -->
             <g id="body-group" class="smooth" transform="translate(150,260)">
               <!-- 몸통 -->
               <ellipse id="torso"
@@ -257,86 +294,92 @@
           </svg>
         </div>
 
-        <!-- ✅ 얼굴 레이어 -->
-        <img id="layer-face"
-             class="layer layer-face"
-             alt="얼굴 레이어"
-             referrerpolicy="no-referrer"
-             crossorigin="anonymous" />
+        <!-- 얼굴 -->
+        <div class="slot slot-face">
+          <img id="layer-face"
+               alt="얼굴 이미지"
+               referrerpolicy="no-referrer"
+               crossorigin="anonymous" />
+        </div>
 
-        <!-- 의상 레이어 -->
-        <img id="layer-top" class="layer layer-top" alt="상의 레이어"
-             referrerpolicy="no-referrer" crossorigin="anonymous"/>
-        <img id="layer-bottom" class="layer layer-bottom" alt="하의 레이어"
-             referrerpolicy="no-referrer" crossorigin="anonymous"/>
-        <img id="layer-outer" class="layer layer-outer" alt="아우터 레이어"
-             referrerpolicy="no-referrer" crossorigin="anonymous"/>
-        <img id="layer-shoes" class="layer layer-shoes" alt="신발 레이어"
-             referrerpolicy="no-referrer" crossorigin="anonymous"/>
-        <img id="layer-accessory" class="layer layer-accessory" alt="액세서리 레이어"
-             referrerpolicy="no-referrer" crossorigin="anonymous"/>
+        <!-- 의상 슬롯 -->
+        <div class="slot slot-top">
+          <img id="layer-top" alt="상의 이미지"
+               referrerpolicy="no-referrer" crossorigin="anonymous"/>
+        </div>
+        <div class="slot slot-bottom">
+          <img id="layer-bottom" alt="하의 이미지"
+               referrerpolicy="no-referrer" crossorigin="anonymous"/>
+        </div>
+        <div class="slot slot-outer">
+          <img id="layer-outer" alt="아우터 이미지"
+               referrerpolicy="no-referrer" crossorigin="anonymous"/>
+        </div>
+        <div class="slot slot-shoes">
+          <img id="layer-shoes" alt="신발 이미지"
+               referrerpolicy="no-referrer" crossorigin="anonymous"/>
+        </div>
+        <div class="slot slot-accessory">
+          <img id="layer-accessory" alt="액세서리 이미지"
+               referrerpolicy="no-referrer" crossorigin="anonymous"/>
+        </div>
       </div>
     </div>
 
-    <!-- 액션 버튼 -->
+    <!-- 액션 버튼 (랜덤 제거) -->
     <div class="bg-white p-4 rounded-xl shadow space-y-3">
-      <div class="grid grid-cols-2 gap-3">
-        <button id="btn-random-by-category"
-                class="px-3 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">
-          선택 카테고리 랜덤
-        </button>
+      <div class="grid grid-cols-1 gap-3">
         <button id="btn-clear-category"
                 class="px-3 py-2 rounded-xl bg-gray-200 hover:bg-gray-300">
-          선택 카테고리 비우기
+          선택한 카테고리 비우기
         </button>
       </div>
       <button id="btn-clear-all"
               class="w-full px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200">
-        전체 레이어 초기화
+        전체 의상 초기화
       </button>
       <div class="text-sm text-gray-600">
         현재 카테고리: <span id="current-category" class="font-semibold">top</span>
       </div>
     </div>
 
-    <!-- 저장/목록/다운로드 -->
+    <!-- 코디 저장 / 다운로드 -->
     <div class="bg-white p-4 rounded-xl shadow space-y-3">
-      <input id="set-name" class="border rounded px-2 py-2 w-full" placeholder="조합 이름 (예: 캠퍼스룩)" />
+      <input id="set-name" class="border rounded px-2 py-2 w-full"
+             placeholder="조합 이름 (예: 캠퍼스 데일리룩)" />
       <div class="grid grid-cols-2 gap-3">
         <button id="btn-save-set"
                 class="px-3 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">
-          💾 현재 조합 저장
+          현재 조합 저장
         </button>
         <a th:href="@{'/user/profile/' + ${user.id} + '/fittingroom/saved'}"
            class="px-3 py-2 rounded-xl bg-gray-200 text-center hover:bg-gray-300">
-          📁 저장 목록 보기
+          저장된 조합 보기
         </a>
       </div>
       <button id="btn-download"
               class="w-full px-3 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">
         ⬇️ 현재 화면을 이미지로 저장
       </button>
+      <div class="space-y-2">
+        <label class="text-sm text-gray-600 block">얼굴 이미지 선택 (옵션)</label>
+        <input id="face-upload" type="file" accept="image/*"
+               class="w-full text-sm text-gray-700" />
+        <button id="btn-face-clear"
+                class="w-full px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-sm">
+          얼굴 이미지 제거
+        </button>
+      </div>
     </div>
 
-    <!-- 사용자 데이터 -->
+    <!-- 메타 데이터 (JS에서 사용) -->
     <div id="fit-meta" th:data-user-id="${user.id}"></div>
   </section>
 
   <!-- 오른쪽: 필터 + 아이템 목록 -->
   <section class="md:col-span-2 space-y-4">
 
-    <!-- 추천 + 랜덤 -->
-    <div class="bg-white p-4 rounded-xl shadow">
-      <h2 class="font-semibold mb-3">추천</h2>
-      <div class="flex flex-wrap items-center gap-3">
-        <button id="btn-random-global" class="px-3 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">
-          전체에서 랜덤 1개
-        </button>
-        <span class="text-sm text-gray-600">클릭 시 해당 카테고리 레이어에 입혀집니다.</span>
-      </div>
-    </div>
-
-    <!-- 🔹 필터 -->
+    <!-- 필터 영역 -->
     <div class="bg-white p-4 rounded-xl shadow space-y-3">
       <h2 class="font-semibold">필터</h2>
       <div class="grid grid-cols-2 gap-3">
@@ -347,25 +390,29 @@
             <option value="bottom">하의 (bottom)</option>
             <option value="outer">아우터 (outer)</option>
             <option value="shoes">신발 (shoes)</option>
-            <option value="accessory">악세서리 (accessory)</option>
+            <option value="accessory">액세서리 (accessory)</option>
           </select>
         </div>
         <div>
           <label class="text-sm text-gray-500">색상</label>
-          <input id="filter-color" type="text" placeholder="흰색, 검정…" class="w-full border rounded-lg px-2 py-2" />
+          <input id="filter-color" type="text"
+                 placeholder="흰색, 검정, 베이지 등"
+                 class="w-full border rounded-lg px-2 py-2" />
         </div>
 
-        <!-- 🔥 세부 카테고리 -->
+        <!-- 세부 카테고리 -->
         <div>
           <label class="text-sm text-gray-500">세부 카테고리</label>
           <select id="filter-subcategory" class="w-full border rounded-lg px-2 py-2">
-            <!-- JS가 자동으로 채워줌 -->
+            <!-- JS가 자동으로 채웁니다 -->
           </select>
         </div>
 
         <div>
           <label class="text-sm text-gray-500">브랜드</label>
-          <input id="filter-brand" type="text" placeholder="나이키, 아디다스…" class="w-full border rounded-lg px-2 py-2" />
+          <input id="filter-brand" type="text"
+                 placeholder="나이키, 아디다스, 무신사 스탠다드 등"
+                 class="w-full border rounded-lg px-2 py-2" />
         </div>
         <div>
           <label class="text-sm text-gray-500">성별</label>
@@ -377,26 +424,30 @@
           </select>
         </div>
         <div class="col-span-2">
-          <label class="text-sm text-gray-500">최대 가격(원)</label>
-          <input id="filter-price" type="number" min="0" step="1000" placeholder="50000" class="w-full border rounded-lg px-2 py-2" />
+          <label class="text-sm text-gray-500">최대 가격</label>
+          <input id="filter-price" type="number" min="0" step="1000"
+                 placeholder="50000"
+                 class="w-full border rounded-lg px-2 py-2" />
         </div>
       </div>
       <div class="grid grid-cols-2 gap-3">
-        <button id="btn-apply-filters" class="px-3 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">
+        <button id="btn-apply-filters"
+                class="px-3 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">
           필터 적용 & 검색
         </button>
-        <button id="btn-clear-filters" class="px-3 py-2 rounded-xl bg-gray-200 hover:bg-gray-300">
+        <button id="btn-clear-filters"
+                class="px-3 py-2 rounded-xl bg-gray-200 hover:bg-gray-300">
           필터 초기화
         </button>
       </div>
     </div>
 
-    <!-- 아이템 목록 (카테고리별 탭 + 리스트) -->
+    <!-- 의상 목록 (카테고리별 + 리스트) -->
     <div class="bg-white p-4 rounded-xl shadow">
       <div class="flex items-center justify-between">
-        <h2 class="font-semibold">아이템 목록</h2>
+        <h2 class="font-semibold">의상 목록</h2>
         <div class="flex items-center gap-2 text-xs text-gray-500">
-          <span>클릭하면 해당 카테고리로 아바타에 입혀집니다.</span>
+          <span>클릭하면 해당 카테고리에 입혀집니다.</span>
           <span id="itemCount" class="font-semibold"></span>
         </div>
       </div>
@@ -417,7 +468,7 @@
                 data-category="shoes">신발</button>
         <button type="button"
                 class="item-tab px-3 py-1 rounded-full bg-gray-100 text-gray-700"
-                data-category="accessory">악세서리</button>
+                data-category="accessory">액세서리</button>
       </div>
 
       <!-- 리스트 래퍼 -->
@@ -438,7 +489,7 @@
                   th:data-brand="${c.brand}"
                   th:data-color="${c.color}"
                   th:data-price="${c.price}">
-            <!-- 썸네일 -->
+            <!-- 이미지 -->
             <div class="w-full aspect-[3/4] overflow-hidden rounded bg-gray-50 flex items-center justify-center">
               <img th:src="${c.imageUrl}"
                    class="w-full h-full object-contain"
@@ -454,17 +505,17 @@
               <p class="truncate text-[10px] text-gray-500" th:text="${c.name}">상품명</p>
               <div class="flex items-center justify-between mt-1">
                 <p class="text-[10px] font-semibold text-gray-900">
-                  ₩<span th:text="${c.price}">0</span>
+                  <span th:text="${c.price}">0</span>
                 </p>
-                <!-- ❤️ 찜 하트 -->
+                <!-- ❤️ 찜 버튼 -->
                 <span class="like-btn text-lg" data-liked="false">♡</span>
               </div>
-              <p class="text-[9px] text-gray-400">내부 DB</p>
+              <p class="text-[9px] text-gray-400">내 DB</p>
             </div>
           </button>
         </div>
 
-        <!-- 나머지 카테고리는 처음엔 비워 두고 JS가 채움 -->
+        <!-- 나머지 카테고리는 처음엔 비워두고 JS가 채움 -->
         <div id="itemList-bottom"
              class="item-list hidden grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
         <div id="itemList-outer"
@@ -477,7 +528,7 @@
         <!-- 공통 빈 상태 -->
         <div id="itemListEmpty"
              class="col-span-full py-8 text-center text-gray-400 text-sm hidden">
-          검색 결과가 없습니다. 필터를 적용하거나 카테고리를 변경해 보세요.
+          검색 결과가 없습니다. 필터를 조정하거나 카테고리를 변경해 보세요.
         </div>
       </div>
 
@@ -490,7 +541,7 @@
       </div>
     </div>
 
-    <!-- 🔹 찜 목록 -->
+    <!-- 찜 목록 -->
     <div class="bg-white p-4 rounded-xl shadow">
       <div class="flex items-center justify-between mb-2">
         <h2 class="font-semibold">찜 목록</h2>
@@ -514,7 +565,7 @@
 </main>
 
 <footer class="py-8 text-center text-xs text-gray-500">
-  StyleMate FittingRoom • v0.2
+  StyleMate FittingRoom · v0.2
 </footer>
 
 </body>

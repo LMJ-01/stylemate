@@ -12,8 +12,10 @@ public class PythonCropServerStarter implements CommandLineRunner {
     @Override
     public void run(String... args) {
         try {
-            String pythonPath = "C:\\stylemate-crop-server\\venv\\Scripts\\python.exe";
-            String scriptPath = "C:\\stylemate-crop-server\\crop_server.py";
+            String root = System.getProperty("user.dir");  
+            String pythonPath = root + "/crop-server/venv/Scripts/python.exe";
+            String scriptPath = root + "/crop-server/crop_server.py";
+
 
             System.out.println("🚀 Python crop_server.py 자동 실행 시도중...");
 

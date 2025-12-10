@@ -30,7 +30,7 @@ public class ImageSearchController {
     public List<Map<String, Object>> search(
             @RequestParam(name = "query", required = false) String query,
             @RequestParam(name = "q", required = false) String q,
-            @RequestParam(name = "display", defaultValue = "12") int display
+            @RequestParam(name = "display", defaultValue = "80") int display
     ) {
         // 🔹 우선순위: q > query
         String keyword = (q != null && !q.trim().isEmpty())
@@ -42,7 +42,8 @@ public class ImageSearchController {
                     "query 또는 q 파라미터가 필요합니다.");
         }
 
-        display = Math.max(1, Math.min(display, 30));
+        // 최대 100까지 허용 (네이버 API 상한)
+        display = Math.max(1, Math.min(display, 100));
         NaverImageSearchDto dto = naverImageService.search(keyword, display);
 
         if (dto == null || dto.getItems() == null) {

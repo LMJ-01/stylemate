@@ -191,6 +191,7 @@ public class FittingRoomController {
         set.setOuterImage(payload.getOuterImage());
         set.setShoesImage(payload.getShoesImage());
         set.setAccessoryImage(payload.getAccessoryImage());
+        set.setFaceImage(payload.getFaceImage());
 
         FittingRoomSet saved = fittingRoomSetService.save(set);
 
@@ -200,11 +201,16 @@ public class FittingRoomController {
     }
 
     /** ✅ 저장된 세트 단일 조회 (미리보기/공유용) */
-    @GetMapping("/api/fittingroom/{setId}")
+    @GetMapping("/{id}/fittingroom/api/{setId}")
     @ResponseBody
-    public ResponseEntity<FittingRoomSet> getSet(@PathVariable Long setId) {
+    public ResponseEntity<FittingRoomSet> getSet(@PathVariable Long id,
+                                                 @PathVariable Long setId,
+                                                 @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        if (!isOwner(id, userDetails)) {
+            return ResponseEntity.status(403).build();
+        }
         FittingRoomSet found = fittingRoomSetService.getById(setId);
-        return (found != null)
+        return (found != null && found.getUser().getId().equals(id))
                 ? ResponseEntity.ok(found)
                 : ResponseEntity.notFound().build();
     }

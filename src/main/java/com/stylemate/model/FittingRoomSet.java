@@ -19,11 +19,36 @@ public class FittingRoomSet {
     private User user;
 
     private String name;
+
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String topImage;
+
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String bottomImage;
+
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String outerImage;
+
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String shoesImage;
+
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String accessoryImage;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String faceImage;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) createdAt = LocalDateTime.now();
+    }
 }
