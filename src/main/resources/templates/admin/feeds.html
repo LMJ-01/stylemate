@@ -21,18 +21,21 @@
     .images { display:flex; gap:8px; margin:6px 0; flex-wrap:wrap; }
     .images img { width:120px; height:120px; object-fit:cover; border:1px solid #e5e5e5; border-radius:8px; background:#fff; }
     .section-title { font-weight:600; margin:6px 0 4px; }
+    .hidden { display:none; }
   </style>
 </head>
 <body>
-    <div class="wrap">
-      <h1>피드/댓글 관리</h1>
-      <div class="toolbar">
-        <label>정렬
-          <select id="order" onchange="loadFeeds()">
+  <div class="wrap">
+    <h1>피드/댓글 관리</h1>
+    <div class="toolbar">
+      <label>정렬
+        <select id="order" onchange="loadFeeds()">
           <option value="latest">최신순</option>
           <option value="id">ID순</option>
         </select>
       </label>
+      <input id="q" type="text" placeholder="닉네임/이메일 검색" style="width:240px;" />
+      <button onclick="loadFeeds()">검색</button>
       <a href="/admin" style="margin-left:auto; text-decoration:none;">
         <button class="secondary">← 대시보드</button>
       </a>
@@ -44,16 +47,24 @@
   <script>
     async function loadFeeds() {
       const order = document.getElementById('order').value;
-      const res = await fetch(`/admin/feeds/api?order=${order}`);
+      const q = document.getElementById('q').value.trim();
+      const res = await fetch(`/admin/feeds/api?order=${order}${q ? '&q=' + encodeURIComponent(q) : ''}`);
       const data = await res.json();
       const list = document.getElementById('feed-list');
+      if (!Array.isArray(data) || data.length === 0) {
+        list.innerHTML = '<div class="text-center text-gray-500 py-6">검색 결과가 없습니다.</div>';
+        return;
+      }
       list.innerHTML = '';
       data.forEach(f => {
         const card = document.createElement('div');
         card.className = 'feed-card';
         card.innerHTML = `
-          <div><strong>ID #${f.id}</strong> · <span class="muted">${f.createdAt || ''}</span> · <span class="muted">${f.userEmail || ''}</span> ${f.hidden ? '<span class="badge">숨김</span>' : ''}</div>
+          <div><strong>${f.userNickname || f.userEmail || '닉네임 없음'}</strong> · <span class="muted">${f.createdAt || ''}</span> ${f.hidden ? '<span class="badge">숨김</span>' : ''}</div>
           <div style="margin:6px 0;">${f.content || ''}</div>
+          <div class="muted" style="margin:4px 0 6px 0;">
+            ${(f.tagList && f.tagList.length) ? f.tagList.map(t => `<span style="margin-right:6px;">${t}</span>`).join('') : (f.hashtags || '')}
+          </div>
           <div class="images">
             ${renderImg(f.imageUrl)}
             ${renderImg(f.imageUrlB)}
@@ -65,8 +76,14 @@
             <textarea id="memo-${f.id}" placeholder="관리자 메모">${f.adminMemo || ''}</textarea>
             <button onclick="saveMemo(${f.id})">메모 저장</button>
           </div>
-          <div class="section-title">댓글 (${f.comments.length})</div>
-          <div class="comments">
+          <div class="section-title">
+            댓글 (${f.comments.length})
+            <button id="btn-comment-toggle-${f.id}" style="margin-left:6px; padding:2px 6px; font-size:12px;"
+                    onclick="toggleComments(${f.id})">
+              열기
+            </button>
+          </div>
+          <div class="comments hidden" id="comments-${f.id}">
             ${f.comments.map(c => `
               <div class="comment-row">
                 <strong>#${c.id}</strong> <span class="muted">${c.createdAt || ''} · ${c.userEmail || ''}</span> ${c.hidden ? '<span class="badge">숨김</span>' : ''}
@@ -142,6 +159,14 @@
       if (!url) return '';
       const safe = url;
       return `<img src="${safe}" alt="image" onerror="this.style.display='none';" />`;
+    }
+
+    function toggleComments(feedId) {
+      const box = document.getElementById('comments-' + feedId);
+      const btn = document.getElementById('btn-comment-toggle-' + feedId);
+      if (!box || !btn) return;
+      const nowHidden = box.classList.toggle('hidden');
+      btn.textContent = nowHidden ? '열기' : '닫기';
     }
 
     document.addEventListener('DOMContentLoaded', loadFeeds);

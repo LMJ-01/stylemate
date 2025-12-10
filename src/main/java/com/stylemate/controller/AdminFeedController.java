@@ -30,9 +30,19 @@ public class AdminFeedController {
 
     @GetMapping("/api")
     @ResponseBody
-    public List<FeedRow> list(@RequestParam(value = "order", defaultValue = "latest") String order) {
+    public List<FeedRow> list(@RequestParam(value = "order", defaultValue = "latest") String order,
+                              @RequestParam(value = "q", required = false) String q) {
         List<Feed> feeds = feedRepository.findAll();
+        String keyword = q != null ? q.trim().toLowerCase() : "";
         return feeds.stream()
+                .filter(f -> {
+                    if (keyword.isEmpty()) return true;
+                    String nick = f.getUser() != null && f.getUser().getNickname() != null
+                            ? f.getUser().getNickname().toLowerCase() : "";
+                    String email = f.getUser() != null && f.getUser().getEmail() != null
+                            ? f.getUser().getEmail().toLowerCase() : "";
+                    return nick.contains(keyword) || email.contains(keyword);
+                })
                 .sorted((a, b) -> {
                     if ("latest".equalsIgnoreCase(order)) {
                         return b.getCreatedAt().compareTo(a.getCreatedAt());
@@ -102,11 +112,14 @@ public class AdminFeedController {
         public Long id;
         public String content;
         public String userEmail;
+        public String userNickname;
         public String createdAt;
         public boolean hidden;
         public String adminMemo;
         public String imageUrl;
         public String imageUrlB;
+        public String hashtags;
+        public List<String> tagList;
         public List<CommentRow> comments;
 
         public static FeedRow from(Feed f, List<Comment> comments) {
@@ -114,11 +127,14 @@ public class AdminFeedController {
             r.id = f.getId();
             r.content = f.getContent();
             r.userEmail = f.getUser() != null ? f.getUser().getEmail() : "";
+            r.userNickname = f.getUser() != null ? f.getUser().getNickname() : "";
             r.createdAt = f.getCreatedAt() != null ? f.getCreatedAt().format(fmt) : "";
             r.hidden = f.isHidden();
             r.adminMemo = f.getAdminMemo();
             r.imageUrl = f.getImageUrl();
             r.imageUrlB = f.getImageUrlB();
+            r.hashtags = f.getHashtags();
+            r.tagList = f.getTagList();
             r.comments = comments.stream().map(CommentRow::from).collect(Collectors.toList());
             return r;
         }
