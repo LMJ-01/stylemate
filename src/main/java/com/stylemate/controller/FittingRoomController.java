@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.Map;
 
 @Controller
 @RequiredArgsConstructor
@@ -203,16 +204,27 @@ public class FittingRoomController {
     /** ✅ 저장된 세트 단일 조회 (미리보기/공유용) */
     @GetMapping("/{id}/fittingroom/api/{setId}")
     @ResponseBody
-    public ResponseEntity<FittingRoomSet> getSet(@PathVariable Long id,
-                                                 @PathVariable Long setId,
-                                                 @AuthenticationPrincipal UserDetailsImpl userDetails) {
+    public ResponseEntity<Map<String, Object>> getSet(@PathVariable Long id,
+                                                      @PathVariable Long setId,
+                                                      @AuthenticationPrincipal UserDetailsImpl userDetails) {
         if (!isOwner(id, userDetails)) {
             return ResponseEntity.status(403).build();
         }
         FittingRoomSet found = fittingRoomSetService.getById(setId);
-        return (found != null && found.getUser().getId().equals(id))
-                ? ResponseEntity.ok(found)
-                : ResponseEntity.notFound().build();
+        if (found == null || !found.getUser().getId().equals(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("id", found.getId());
+        body.put("name", found.getName());
+        body.put("createdAt", found.getCreatedAt());
+        body.put("topImage", found.getTopImage());
+        body.put("bottomImage", found.getBottomImage());
+        body.put("outerImage", found.getOuterImage());
+        body.put("shoesImage", found.getShoesImage());
+        body.put("accessoryImage", found.getAccessoryImage());
+        body.put("faceImage", found.getFaceImage());
+        return ResponseEntity.ok(body);
     }
 
     /** ✅ 세트 삭제 (본인만) */

@@ -119,6 +119,15 @@ public class Feed {
     @Column(name = "vote_end_at")
     private LocalDateTime voteEndAt;
 
+    /* ===============================
+       관리자 제어
+       =============================== */
+    @Column(name = "hidden", nullable = false)
+    private boolean hidden = false;
+
+    @Column(name = "admin_memo", length = 500)
+    private String adminMemo;
+
     /** 종료 후 공개 (true = 마감 후 공개, false = 실시간 공개) */
     @Column(name = "reveal_after_end", nullable = false)
     private boolean revealAfterEnd = true; // getter: isRevealAfterEnd()

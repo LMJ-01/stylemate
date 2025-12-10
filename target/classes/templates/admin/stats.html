@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>관리자 - 통계</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f5f5f5; margin:0; padding:0; }
+    .wrap { max-width: 1100px; margin: 32px auto; background: #fff; padding: 22px 24px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+    h1 { margin: 0 0 14px; }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 12px; margin-top: 16px; }
+    .card { background:#fafafa; border:1px solid #e5e5e5; border-radius: 10px; padding: 14px; }
+    .stat { font-size:24px; font-weight:700; margin-top:6px; }
+    .muted { color:#777; font-size: 14px; }
+    ul { padding-left:16px; margin:6px 0; }
+    button { padding:8px 12px; border-radius:6px; border:1px solid #d7d7d7; background:#e5e7eb; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h1>통계</h1>
+      <a href="/admin" style="text-decoration:none;"><button>← 대시보드</button></a>
+    </div>
+
+    <div class="card-grid">
+      <div class="card">
+        <strong>전체 사용자</strong>
+        <div class="stat" id="stat-users">-</div>
+        <p class="muted">총 가입자 수</p>
+      </div>
+      <div class="card">
+        <strong>피드</strong>
+        <div class="stat" id="stat-feeds">-</div>
+        <p class="muted" id="stat-today-feeds">오늘: -</p>
+      </div>
+      <div class="card">
+        <strong>댓글</strong>
+        <div class="stat" id="stat-comments">-</div>
+        <p class="muted" id="stat-today-comments">오늘: -</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:18px;">랭킹</h3>
+    <div class="card-grid">
+      <div class="card">
+        <strong>인기 태그 TOP5</strong>
+        <ul id="stat-tags"><li class="muted">로딩 중...</li></ul>
+      </div>
+      <div class="card">
+        <strong>피드 작성 TOP5</strong>
+        <ul id="stat-feed-authors"><li class="muted">로딩 중...</li></ul>
+      </div>
+      <div class="card">
+        <strong>댓글 작성 TOP5</strong>
+        <ul id="stat-comment-authors"><li class="muted">로딩 중...</li></ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function loadStats() {
+      try {
+        const res = await fetch('/admin/api/stats');
+        if (!res.ok) throw new Error(res.status);
+        const s = await res.json();
+        document.getElementById('stat-users').textContent = s.totalUsers ?? '-';
+        document.getElementById('stat-feeds').textContent = s.totalFeeds ?? '-';
+        document.getElementById('stat-today-feeds').textContent = '오늘: ' + (s.todayFeeds ?? '-');
+        document.getElementById('stat-comments').textContent = s.totalComments ?? '-';
+        document.getElementById('stat-today-comments').textContent = '오늘: ' + (s.todayComments ?? '-');
+        renderList('stat-tags', s.topTags, (item) => `${item.tag}: ${item.count}`, '태그 없음');
+        renderList('stat-feed-authors', s.topFeedAuthors, (item) => `${item.email}: ${item.count}`, '작성자 없음');
+        renderList('stat-comment-authors', s.topCommentAuthors, (item) => `${item.email}: ${item.count}`, '작성자 없음');
+      } catch (e) {
+        console.warn('통계 로드 실패', e);
+      }
+    }
+    function renderList(id, arr, formatter, emptyText) {
+      const ul = document.getElementById(id);
+      ul.innerHTML = '';
+      if (arr && arr.length > 0) {
+        arr.forEach(item => {
+          // item이 {tag,count} 형태가 아닐 경우(예: {"#tag": 3})도 처리
+          if (item && item.tag === undefined && item.count === undefined) {
+            const entries = Object.entries(item || {});
+            if (entries.length > 0) {
+              const [k, v] = entries[0];
+              item = { tag: k, count: v, email: k };
+            }
+          }
+          const li = document.createElement('li');
+          li.textContent = formatter(item);
+          ul.appendChild(li);
+        });
+      } else {
+        const li = document.createElement('li');
+        li.className = 'muted';
+        li.textContent = emptyText;
+        ul.appendChild(li);
+      }
+    }
+    document.addEventListener('DOMContentLoaded', loadStats);
+  </script>
+</body>
+</html>

@@ -478,33 +478,52 @@
     const shoulderScale =
       parseFloat(stage.style.getPropertyValue('--shoulderScale') || '1') || 1;
 
-    // 기준 앵커 (어깨/허리/엉덩이/발) - 키/어깨/다리 길이에 따라 조정
-    const shoulderY = 0.265 * stageH - (hScale - 1) * 0.03 * stageH - (shoulderScale - 1) * 0.045 * stageH;
-    const waistY    = 0.51 * stageH + (hScale - 1) * 0.015 * stageH;
-    const hipY      = 0.63 * stageH + (legH - 1) * 0.045 * stageH;
-    const footY     = 0.93 * stageH + (legH - 1) * 0.06 * stageH;
+    // === 기준 앵커(고정 비율) ===
+    const shoulderY = 0.26 * stageH;
+    const waistY    = 0.50 * stageH;
+    const hipY      = 0.62 * stageH;
+    const footY     = 0.93 * stageH;
 
-    // Y 위치 세팅 (퍼센트로 저장해서 CSS에서 사용)
-    // 상의를 더 아래로, 바지는 약간 더 아래로, 신발은 약간 위로
-    const topYPct    = ((shoulderY + 0.20 * stageH) / stageH) * 100; // 더 아래로
+    // === Y 위치: 의류별 기준점 ===
+    const topYPct    = ((shoulderY + 0.20 * stageH) / stageH) * 100;
     const outerYPct  = topYPct;
-    const bottomYPct = ((hipY + 0.05 * stageH) / stageH) * 100;
-    const shoesYPct  = ((footY - 0.015 * stageH) / stageH) * 100;
+    const bottomYPct = ((hipY + 0.16 * stageH) / stageH) * 100;
+    const shoesYPct  = ((footY - 0.04 * stageH) / stageH) * 100;
     const accessoryYPct = 30;
 
-    // 스케일 (체형/어깨 넓이에 따라 조정)
-    let topScale = 1.18 + (wScale - 1) * 0.6; // 상의 크기 소폭 축소
-    let bottomScale = 1.18 + (wScale - 1) * 0.65; // 하의 유지
-    let shoesScale = 1.15 + (wScale - 1) * 0.25;  // 신발 크게
-    let outerScale = topScale * 1.02;
+    // === 스케일 ===
+    let topScale    = 1.05 + (wScale - 1) * 0.45;
+    let bottomScale = 1.20 + (wScale - 1) * 0.65;
+    let shoesScale  = 1.05 + (wScale - 1) * 0.25;
+    let outerScale  = topScale * 1.02;
 
     if (body === 'slim') {
-      topScale   -= 0.05;
+      topScale    -= 0.05;
       bottomScale -= 0.05;
     } else if (body === 'plus') {
-      topScale   += 0.08;
+      topScale    += 0.08;
       bottomScale += 0.08;
     }
+
+    // === 너비(px) 기준 -> % 변환 ===
+    const baseTorsoWidth = stageW * 0.58;
+    const baseOuterWidth = stageW * 0.62;
+    const baseLegWidth   = stageW * 0.60;
+    const baseFootWidth  = stageW * 0.38;
+    const baseAccessoryWidth = stageW * 0.30;
+
+    const topWidthPx =
+      baseTorsoWidth * clamp(1 + (wScale - 1) * 0.8 + (shoulderScale - 1) * 0.55, 0.95, 1.5);
+    const outerWidthPx =
+      baseOuterWidth * clamp(1 + (wScale - 1) * 0.8 + (shoulderScale - 1) * 0.6, 0.85, 1.4);
+    const bottomWidthPx =
+      baseLegWidth * clamp(1 + (wScale - 1) * 0.8, 0.95, 1.4);
+    const shoesWidthPx =
+      baseFootWidth * clamp(1 + (wScale - 1) * 0.3, 0.9, 1.4);
+    const accessoryWidthPx =
+      baseAccessoryWidth * clamp(1 + (wScale - 1) * 0.2, 0.8, 1.2);
+
+    const toPct = (px) => ((px / stageW) * 100).toFixed(1);
 
     stage.style.setProperty('--topY', `${topYPct.toFixed(2)}%`);
     stage.style.setProperty('--outerY', `${outerYPct.toFixed(2)}%`);
@@ -516,28 +535,6 @@
     stage.style.setProperty('--bottomScale', bottomScale.toFixed(2));
     stage.style.setProperty('--shoesScale', shoesScale.toFixed(2));
     stage.style.setProperty('--outerScale', outerScale.toFixed(2));
-
-    // 기준 너비(px)를 퍼센트로 환산
-    const baseTorsoWidth     = stageW * 0.58; // 상의 폭 소폭 축소
-    const baseOuterWidth     = stageW * 0.62;
-    const baseLegWidth       = stageW * 0.56; // 하의 기본 폭 유지
-    const baseFootWidth      = stageW * 0.38; // 신발 기본 폭 유지
-    const baseAccessoryWidth = stageW * 0.3;
-
-    const topWidthPx =
-      baseTorsoWidth *
-      clamp(1 + (wScale - 1) * 0.8 + (shoulderScale - 1) * 0.55, 0.95, 1.5);
-    const outerWidthPx =
-      baseOuterWidth *
-      clamp(1 + (wScale - 1) * 0.8 + (shoulderScale - 1) * 0.6, 0.85, 1.4);
-    const bottomWidthPx =
-      baseLegWidth * clamp(1 + (wScale - 1) * 0.75, 0.9, 1.5);
-    const shoesWidthPx =
-      baseFootWidth * clamp(1 + (wScale - 1) * 0.3, 0.9, 1.4);
-    const accessoryWidthPx =
-      baseAccessoryWidth * clamp(1 + (wScale - 1) * 0.2, 0.8, 1.2);
-
-    const toPct = (px) => ((px / stageW) * 100).toFixed(1);
 
     stage.style.setProperty('--topWidth', `${toPct(topWidthPx)}%`);
     stage.style.setProperty('--outerWidth', `${toPct(outerWidthPx)}%`);

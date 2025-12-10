@@ -35,6 +35,16 @@
       background: #f7f7f7;
       border-radius: 1rem;
       overflow: hidden;
+      /* 본 화면과 동일한 기준점 변수 */
+      /* 미리보기와 동일한 기준점 */
+      --topY: 42%;
+      --outerY: 42%;
+      --bottomY: 66%;
+      --shoesY: 88%;
+      --topW: 60%;
+      --outerW: 62%;
+      --bottomW: 55%;
+      --shoesW: 40%;
     }
     .mini-stage svg {
       position: absolute;
@@ -69,11 +79,63 @@
     }
 
     /* 메인 피팅룸 기본값 및 슬롯 위치/크기 조정 */
-    .mini-slot.top    { top: 47%; width: 65%; }
-    .mini-slot.outer  { top: 47%; width: 68%; }
-    .mini-slot.bottom { top: 68%; width: 60%; }
-    .mini-slot.shoes  { top: 92%; width: 45%; }
+    /* 목록 썸네일: 피팅룸 기본 위치에 더 가깝게 조정 */
+    /* 메인 피팅룸 위치에 맞춰 재조정 */
+    .mini-slot.top    { top: var(--topY);   width: var(--topW);   transform: translate(-50%, -50%); }
+    .mini-slot.outer  { top: var(--outerY); width: var(--outerW); transform: translate(-50%, -50%); }
+    .mini-slot.bottom { top: var(--bottomY); width: var(--bottomW); max-width: 65%; max-height: 55%; transform: translate(-50%, -50%); }
+    .mini-slot.shoes  { top: var(--shoesY); width: var(--shoesW); transform: translate(-50%, -50%); }
     .mini-slot.accessory { top: 30%; width: 30%; }
+  </style>
+  <style>
+    /* 미리보기 모달용 슬롯 (메인과 동일한 위치/크기) */
+    .preview-stage {
+      position: relative;
+      width: 320px;
+      aspect-ratio: 3/5;
+      background: #f7f7f7;
+      border-radius: 1rem;
+      overflow: hidden;
+      /* 본 화면과 동일한 기준점 변수 */
+      --topY: 42%;
+      --outerY: 42%;
+      --bottomY: 66%;
+      --shoesY: 88%;
+      --topW: 60%;
+      --outerW: 62%;
+      --bottomW: 55%;
+      --shoesW: 40%;
+    }
+    .preview-slot {
+      position: absolute;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .preview-slot img {
+      width: 100%;
+      height: auto;
+      display: block;
+      object-fit: contain;
+      font-size: 0;
+    }
+    .preview-slot img:not([src]),
+    .preview-slot img[src=""] {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .preview-slot.face {
+      top: 14%;
+      width: 26%;
+      height: 26%;
+      border-radius: 50%;
+      overflow: hidden;
+    }
+    .preview-slot.top    { top: var(--topY);   width: var(--topW);   transform: translate(-50%, -50%); }
+    .preview-slot.outer  { top: var(--outerY); width: var(--outerW); transform: translate(-50%, -50%); }
+    .preview-slot.bottom { top: var(--bottomY); width: var(--bottomW); max-width: 65%; max-height: 55%; transform: translate(-50%, -50%); }
+    .preview-slot.shoes  { top: var(--shoesY); width: var(--shoesW); transform: translate(-50%, -50%); }
+    .preview-slot.accessory { top: 30%; width: 30%; }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -174,26 +236,44 @@
 <div id="previewModal"
      class="fixed inset-0 bg-black bg-opacity-70 hidden justify-center items-center z-50"
      onclick="closePreview()">
-  <div class="relative bg-white p-4 rounded-xl shadow-xl"
+  <div class="relative bg-white p-4 rounded-xl shadow-xl max-w-xl w-full flex flex-col items-center"
        onclick="event.stopPropagation()">
-    <div id="preview-stage"
-         class="avatar-stage w-72 aspect-[3/5] relative bg-gray-50 rounded-xl overflow-hidden">
-      <div class="slot slot-face">
+    <div id="preview-stage" class="preview-stage">
+      <!-- 기본 아바타 실루엣 -->
+      <svg viewBox="0 0 300 500" aria-hidden="true" style="position:absolute; inset:0; width:100%; height:100%;">
+        <rect x="0" y="0" width="300" height="500" fill="#f7f7f7" rx="20"></rect>
+        <g transform="translate(150,260)" fill="#e6cbb3">
+          <ellipse cx="0" cy="0" rx="60" ry="95"></ellipse>
+          <rect x="-75" y="-90" width="150" height="30" rx="15"></rect>
+          <ellipse cx="-90" cy="-40" rx="22" ry="60"></ellipse>
+          <ellipse cx="90"  cy="-40" rx="22" ry="60"></ellipse>
+          <ellipse cx="-25" cy="120" rx="28" ry="95"></ellipse>
+          <ellipse cx="25"  cy="120" rx="28" ry="95"></ellipse>
+        </g>
+        <g transform="translate(150,110)" fill="#e6cbb3">
+          <circle cx="0" cy="0" r="45"></circle>
+        </g>
+        <g transform="translate(150,470)" fill="#cfcfcf">
+          <ellipse cx="-30" cy="0" rx="28" ry="12"></ellipse>
+          <ellipse cx="30" cy="0" rx="28" ry="12"></ellipse>
+        </g>
+      </svg>
+      <div class="preview-slot face">
         <img id="prev-face" alt="face" />
       </div>
-      <div class="slot slot-top">
+      <div class="preview-slot top">
         <img id="prev-top" alt="top" />
       </div>
-      <div class="slot slot-bottom">
+      <div class="preview-slot bottom">
         <img id="prev-bottom" alt="bottom" />
       </div>
-      <div class="slot slot-outer">
+      <div class="preview-slot outer">
         <img id="prev-outer" alt="outer" />
       </div>
-      <div class="slot slot-shoes">
+      <div class="preview-slot shoes">
         <img id="prev-shoes" alt="shoes" />
       </div>
-      <div class="slot slot-accessory">
+      <div class="preview-slot accessory">
         <img id="prev-accessory" alt="accessory" />
       </div>
     </div>
@@ -220,6 +300,10 @@
   const userId = /*[[${me.id}]]*/ '0';
 
   let currentPreviewSetId = null;
+
+  function closePreview() {
+    document.getElementById("previewModal").classList.add("hidden");
+  }
 
   // 코디 미리보기
   async function previewSet(id) {
