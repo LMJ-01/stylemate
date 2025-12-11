@@ -319,11 +319,16 @@
     byId('btn-clear-filters')?.addEventListener('click', clearFilters);
     byId('btn-save-set')?.addEventListener('click', saveSet);
     byId('btn-download')?.addEventListener('click', downloadImage);
+    byId('btn-toggle-flat')?.addEventListener('click', toggleFlatMode);
     byId('face-upload')?.addEventListener('change', (e) => {
       const file = e.target.files?.[0];
       if (file) handleFaceUpload(file);
     });
     byId('btn-face-clear')?.addEventListener('click', clearFace);
+
+    // 초기 모드는 아바타 모드로 강제
+    const stageInit = $('.avatar-stage');
+    if (stageInit) stageInit.classList.remove('flat');
 
     // 위시리스트 전체 삭제
     byId('btn-clear-wishlist')?.addEventListener('click', () => {
@@ -349,6 +354,24 @@
 
     // 초기 위시리스트 렌더링
     renderFavorites();
+  }
+
+  function toggleFlatMode() {
+    const stage = $('.avatar-stage');
+    if (!stage) return;
+    const nowFlat = !stage.classList.contains('flat');
+    stage.classList.toggle('flat', nowFlat);
+    const btn = byId('btn-toggle-flat');
+    if (btn) {
+      btn.textContent = nowFlat
+        ? '플랫 코디 모드 해제 (아바타 보기)'
+        : '플랫 코디 모드 (아바타 숨기기)';
+    }
+    if (nowFlat) {
+      applyFlatLayout(stage);
+    } else {
+      applyClothesLayoutForAvatar(stage);
+    }
   }
 
   // 메인 카테고리 변경 시 서브카테고리 옵션 채우기
@@ -463,7 +486,7 @@
 
   // ===== 아바타 비율에 맞게 옷 레이아웃 조정 =====
   function applyClothesLayoutForAvatar(stage) {
-    if (!stage) return;
+    if (!stage || stage.classList.contains('flat')) return;
 
     const stageW = stage.clientWidth || 300;
     const stageH = stage.clientHeight || 500;
@@ -478,23 +501,23 @@
     const shoulderScale =
       parseFloat(stage.style.getPropertyValue('--shoulderScale') || '1') || 1;
 
-    // === 기준 앵커(고정 비율) ===
-    const shoulderY = 0.26 * stageH;
-    const waistY    = 0.50 * stageH;
-    const hipY      = 0.62 * stageH;
-    const footY     = 0.93 * stageH;
+    // === 기준 앵커(아바타 스케일 반영) ===
+    const shoulderY = 0.26 * stageH - (hScale - 1) * 0.02 * stageH - (shoulderScale - 1) * 0.03 * stageH;
+    const waistY    = 0.50 * stageH + (hScale - 1) * 0.02 * stageH;
+    const hipY      = 0.62 * stageH + (legH - 1) * 0.03 * stageH + (hScale - 1) * 0.015 * stageH;
+    const footY     = 0.93 * stageH + (legH - 1) * 0.04 * stageH + (hScale - 1) * 0.015 * stageH;
 
     // === Y 위치: 의류별 기준점 ===
-    const topYPct    = ((shoulderY + 0.20 * stageH) / stageH) * 100;
+    const topYPct    = ((shoulderY + 0.24 * stageH) / stageH) * 100;
     const outerYPct  = topYPct;
-    const bottomYPct = ((hipY + 0.16 * stageH) / stageH) * 100;
-    const shoesYPct  = ((footY - 0.04 * stageH) / stageH) * 100;
+    const bottomYPct = ((hipY + 0.12 * stageH) / stageH) * 100;
+    const shoesYPct  = ((footY - 0.05 * stageH) / stageH) * 100;
     const accessoryYPct = 30;
 
     // === 스케일 ===
-    let topScale    = 1.05 + (wScale - 1) * 0.45;
-    let bottomScale = 1.20 + (wScale - 1) * 0.65;
-    let shoesScale  = 1.05 + (wScale - 1) * 0.25;
+    let topScale    = 1.05 + (wScale - 1) * 0.45 + (shoulderScale - 1) * 0.25 + (hScale - 1) * 0.15;
+    let bottomScale = 1.20 + (wScale - 1) * 0.65 + (legH - 1) * 0.30 + (hScale - 1) * 0.20;
+    let shoesScale  = 1.05 + (wScale - 1) * 0.25 + (legH - 1) * 0.10;
     let outerScale  = topScale * 1.02;
 
     if (body === 'slim') {
@@ -506,20 +529,20 @@
     }
 
     // === 너비(px) 기준 -> % 변환 ===
-    const baseTorsoWidth = stageW * 0.58;
-    const baseOuterWidth = stageW * 0.62;
-    const baseLegWidth   = stageW * 0.60;
-    const baseFootWidth  = stageW * 0.38;
+    const baseTorsoWidth = stageW * 0.62;
+    const baseOuterWidth = stageW * 0.68;
+    const baseLegWidth   = stageW * 0.58;
+    const baseFootWidth  = stageW * 0.42;
     const baseAccessoryWidth = stageW * 0.30;
 
     const topWidthPx =
-      baseTorsoWidth * clamp(1 + (wScale - 1) * 0.8 + (shoulderScale - 1) * 0.55, 0.95, 1.5);
+      baseTorsoWidth * clamp(1 + (wScale - 1) * 0.8 + (shoulderScale - 1) * 0.55 + (hScale - 1) * 0.2, 0.95, 1.6);
     const outerWidthPx =
-      baseOuterWidth * clamp(1 + (wScale - 1) * 0.8 + (shoulderScale - 1) * 0.6, 0.85, 1.4);
+      baseOuterWidth * clamp(1 + (wScale - 1) * 0.8 + (shoulderScale - 1) * 0.6 + (hScale - 1) * 0.2, 0.85, 1.6);
     const bottomWidthPx =
-      baseLegWidth * clamp(1 + (wScale - 1) * 0.8, 0.95, 1.4);
+      baseLegWidth * clamp(1 + (wScale - 1) * 0.8 + (legH - 1) * 0.35 + (hScale - 1) * 0.2, 0.95, 1.6);
     const shoesWidthPx =
-      baseFootWidth * clamp(1 + (wScale - 1) * 0.3, 0.9, 1.4);
+      baseFootWidth * clamp(1 + (wScale - 1) * 0.3 + (legH - 1) * 0.15, 0.9, 1.4);
     const accessoryWidthPx =
       baseAccessoryWidth * clamp(1 + (wScale - 1) * 0.2, 0.8, 1.2);
 
@@ -541,6 +564,27 @@
     stage.style.setProperty('--bottomWidth', `${toPct(bottomWidthPx)}%`);
     stage.style.setProperty('--shoesWidth', `${toPct(shoesWidthPx)}%`);
     stage.style.setProperty('--accessoryWidth', `${toPct(accessoryWidthPx)}%`);
+  }
+
+  // ===== 플랫 코디 모드 (아바타 숨기기 전용) =====
+  function applyFlatLayout(stage) {
+    if (!stage) return;
+    stage.style.setProperty('--topY', '30%');
+    stage.style.setProperty('--outerY', '28%');
+    stage.style.setProperty('--bottomY', '62%');
+    stage.style.setProperty('--shoesY', '90%');
+    stage.style.setProperty('--accessoryY', '24%');
+
+    stage.style.setProperty('--topWidth', '70%');
+    stage.style.setProperty('--outerWidth', '74%');
+    stage.style.setProperty('--bottomWidth', '66%');
+    stage.style.setProperty('--shoesWidth', '44%');
+    stage.style.setProperty('--accessoryWidth', '34%');
+
+    stage.style.setProperty('--topScale', '1.02');
+    stage.style.setProperty('--outerScale', '1.02');
+    stage.style.setProperty('--bottomScale', '1.00');
+    stage.style.setProperty('--shoesScale', '1.00');
   }
 
   // ===== avatar.json 기반 아바타 초기화 =====
@@ -695,9 +739,13 @@
         if (legR) legR.setAttribute('rx', String(legRx * wScale));
       }
 
-      if (stage) {
+    if (stage) {
+      if (stage.classList.contains('flat')) {
+        applyFlatLayout(stage);
+      } else {
         applyClothesLayoutForAvatar(stage);
       }
+    }
     } catch (e) {
       console.warn('[avatarBase] 초기화 실패:', e);
     }
